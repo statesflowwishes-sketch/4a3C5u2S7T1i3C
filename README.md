@@ -1015,7 +1015,31 @@ For critical system issues:
 
 *Built with ❤️ for the advancement of ethical spatial audio technology*
 
----
+---# 1) Trademark-Hinweis & Lizenz hinzufügen
+cat > TRADEMARKS.md <<'EOF'
+All product names, logos, and brands are property of their respective owners.
+Use here is for identification/reference only and does not imply endorsement.
+EOF
+
+cat > LICENSE <<'EOF'
+MIT License
+
+Copyright (c) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+...
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND...
+EOF
+
+# 2) README-Formulierung auf "Präsent/Konzeptstudie" umstellen
+# Ersetzt die "Kooperation"-Zeile durch ein rechtssicheres Geschenk-Wording
+perl -0777 -pe 's/Entwickelt in Kooperation mit Sennheiser & Pioneer DJ.*?\n/Präsent \/ Konzeptstudie für Pioneer DJ & Sennheiser.\nUnabhängige Demo ohne offizielle Zusammenarbeit oder Endorsement.\nMarken und Logos gehören den jeweiligen Inhabern.\n/g' -i README.md
+
+# 3) Commit & Push
+git add README.md TRADEMARKS.md LICENSE
+git commit -m "Clarify: Präsent/Konzeptstudie, add TRADEMARKS + MIT license"
+git push
+
 
 **Last Updated**: September 5, 2025  
 **Version**: 1.0.0  
