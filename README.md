@@ -1,5 +1,11 @@
 # 🎵 Akustic System Pro - MOTHERSHIP Blueprint
 
+Präsent / Konzeptstudie für Pioneer DJ & Sennheiser.
+Unabhängige Demo ohne offizielle Zusammenarbeit oder Endorsement.
+Marken und Logos gehören den jeweiligen Inhabern.
+Hinweis (Ethik & Recht):
+Nicht-kommerzielles Geschenk/Showcase. Keine vertraulichen Daten, kein Sponsoring, keine Partnerschaft. Nutzung nur zu Demo-/Forschungszwecken.
+
 ## 🌍 Advanced 3D Audio Synthtography & Spatial Sound Engineering
 
 [![EU AI Act Compliant](https://img.shields.io/badge/EU%20AI%20Act-Compliant-00a650?style=for-the-badge&logo=european-union&logoColor=white)](https://artificialintelligenceact.eu/)
