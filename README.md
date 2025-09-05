@@ -104,16 +104,15 @@ Our system fully complies with the European Union's Artificial Intelligence Act,
 ### GDPR Data Protection
 
 ```mermaid
-graph TD
-    A[Data Collection] -->|Encrypted| B[Processing Engine]
-    B -->|Anonymized| C[Analysis Module]
-    C -->|Pseudonymized| D[Storage System]
-    D -->|Secured| E[User Access]
+flowchart LR
+    A[Data Collection] --> B[Processing]
+    B --> C[Analysis]
+    C --> D[Storage]
+    D --> E[User Access]
     
-    F[Consent Management] --> A
-    G[Right to Erasure] --> D
-    H[Data Portability] --> E
-    I[Privacy by Design] --> B
+    F[Consent] --> A
+    G[Erasure] --> D
+    H[Portability] --> E
 ```
 
 ### Human Rights Integration
@@ -158,7 +157,7 @@ MOTHERSHIP ist eine technische Regie für dreidimensionale Klangräume. Das Syst
 #### Core Components | Kernkomponenten
 
 ```mermaid
-graph LR
+flowchart LR
     A[Audio Input] --> B[Spatial Processing]
     B --> C[Layer Mixing]
     C --> D[Path Automation]
@@ -168,9 +167,6 @@ graph LR
     G[Control Interface] --> B
     G --> C
     G --> D
-    
-    H[External Control] --> G
-    I[MIDI/OSC] --> H
 ```
 
 ### 1. Vision & Zweck
@@ -203,24 +199,23 @@ Klang wird nicht nur gemischt, sondern als Raumplastik komponiert – mit Layern
 #### Use-Cases
 
 ```mermaid
-mindmap
-  root((MOTHERSHIP))
-    Studio
-      Dramaturgische Positionierung
-      Tiefenstaffelung
-      Spurenverarbeitung
-    Bühne
-      Live-Morphing
-      Stimmungsübergänge
-      Raumveränderungen
-    Installation
-      Dauerbetrieb
-      Stabile Illusion
-      Kleine Lautsprecher
-    Forschung
-      Psychoakustische Parameter
-      Hörfeldanalyse
-      Prototyping
+flowchart TD
+    M[MOTHERSHIP] --> S[Studio]
+    M --> B[Bühne]
+    M --> I[Installation]
+    M --> F[Forschung]
+    
+    S --> S1[Dramaturgische Positionierung]
+    S --> S2[Tiefenstaffelung]
+    
+    B --> B1[Live-Morphing]
+    B --> B2[Stimmungsübergänge]
+    
+    I --> I1[Dauerbetrieb]
+    I --> I2[Stabile Illusion]
+    
+    F --> F1[Psychoakustische Parameter]
+    F --> F2[Hörfeldanalyse]
 ```
 
 ---
@@ -317,25 +312,21 @@ class MovementEngine {
 
 #### Latency Analysis
 
-```mermaid
-gantt
-    title Audio Processing Latency Breakdown
-    dateFormat X
-    axisFormat %s ms
-    
-    section Input
-    ADC Conversion    :0, 0.1
-    Buffer Fill       :0.1, 0.2
-    
-    section Processing
-    Spatial Engine    :0.2, 0.5
-    Convolution       :0.5, 0.8
-    Layer Mixing      :0.8, 1.0
-    
-    section Output
-    DAC Conversion    :1.0, 1.1
-    Driver Latency    :1.1, 1.3
-```
+### Latency Analysis
+
+**Audio Processing Pipeline Timing:**
+
+| Stage | Duration | Cumulative |
+|-------|----------|------------|
+| ADC Conversion | 0.1ms | 0.1ms |
+| Buffer Fill | 0.1ms | 0.2ms |
+| Spatial Engine | 0.3ms | 0.5ms |
+| Convolution | 0.3ms | 0.8ms |
+| Layer Mixing | 0.2ms | 1.0ms |
+| DAC Conversion | 0.1ms | 1.1ms |
+| Driver Latency | 0.2ms | 1.3ms |
+
+**Total System Latency: 1.3ms**
 
 #### Performance Benchmarks
 
@@ -349,15 +340,19 @@ gantt
 
 ### Scalability Metrics
 
-```mermaid
-line
-    title System Performance vs Load
-    x-axis "Concurrent Audio Objects" 1 --> 100
-    y-axis "Processing Latency (ms)" 0 --> 5
-    
-    "Current System" : [1.4, 1.6, 1.9, 2.3, 2.8, 3.2, 3.8, 4.1, 4.6, 4.9]
-    "Optimized Target" : [1.2, 1.3, 1.5, 1.7, 2.0, 2.2, 2.5, 2.7, 3.0, 3.2]
-```
+### Performance Scalability
+
+**System Performance vs Load:**
+
+| Objects | Current Latency | Target Latency |
+|---------|----------------|----------------|
+| 10 | 1.4ms | 1.2ms |
+| 20 | 1.6ms | 1.3ms |
+| 30 | 1.9ms | 1.5ms |
+| 50 | 2.3ms | 1.7ms |
+| 100 | 4.9ms | 3.2ms |
+
+**Linear scaling up to 50 objects, optimized algorithms target 35% improvement**
 
 ---
 
@@ -366,13 +361,13 @@ line
 ### GPU Computing Architecture
 
 ```mermaid
-graph TD
-    A[CPU Control Thread] --> B[GPU Command Queue]
-    B --> C[Spatial Compute Shader]
-    B --> D[Convolution Kernel]
-    B --> E[Mixing Kernel]
+flowchart TD
+    A[CPU Control] --> B[GPU Queue]
+    B --> C[Spatial Shader]
+    B --> D[Convolution]
+    B --> E[Mixing]
     
-    C --> F[GPU Memory Pool]
+    C --> F[GPU Memory]
     D --> F
     E --> F
     
@@ -440,7 +435,7 @@ class DistributedAudioProcessor {
 #### HRTF Processing
 
 ```mermaid
-graph LR
+flowchart LR
     A[Source Position] --> B[HRTF Selection]
     B --> C[Binaural Synthesis]
     C --> D[Head Tracking]
@@ -483,16 +478,16 @@ class HRTFProcessor {
 #### Impulse Response Processing
 
 ```mermaid
-flowchart TD
-    A[Room Geometry] --> B[Ray Tracing Engine]
-    B --> C[Reflection Calculation]
-    C --> D[Impulse Response Generation]
-    D --> E[Convolution Processing]
-    E --> F[Spatial Audio Output]
+flowchart LR
+    A[Room Geometry] --> B[Ray Tracing]
+    B --> C[Reflections]
+    C --> D[Impulse Response]
+    D --> E[Convolution]
+    E --> F[Audio Output]
     
-    G[Surface Materials] --> B
-    H[Source Position] --> B
-    I[Listener Position] --> B
+    G[Materials] --> B
+    H[Source] --> B
+    I[Listener] --> B
 ```
 
 ---
@@ -547,22 +542,18 @@ class PTPSynchronizer {
 #### Privacy by Design
 
 ```mermaid
-graph TD
-    A[Data Collection] --> B{Consent Check}
-    B -->|Granted| C[Minimal Data Processing]
-    B -->|Denied| D[Service Limitation]
+flowchart TD
+    A[Data Collection] --> B{Consent}
+    B -->|Yes| C[Processing]
+    B -->|No| D[Limited Service]
     
-    C --> E[Encryption Layer]
+    C --> E[Encryption]
     E --> F[Anonymization]
-    F --> G[Secure Storage]
+    F --> G[Storage]
     
-    H[User Rights] --> I[Data Access]
-    H --> J[Data Deletion]
-    H --> K[Data Portability]
-    
-    I --> G
-    J --> G
-    K --> G
+    H[User Rights] --> I[Access]
+    H --> J[Deletion]
+    H --> K[Portability]
 ```
 
 ### Audio Ethics Framework
@@ -648,21 +639,13 @@ docs/
 
 #### Virtual Reality Training Environment
 
-```mermaid
-journey
-    title Audio Engineer Learning Path
-    section Fundamentals
-      Basic Concepts     : 5: Engineer
-      System Setup       : 4: Engineer
-      First Spatial Mix  : 3: Engineer
-    section Advanced
-      Complex Scenes     : 4: Engineer
-      Live Performance   : 5: Engineer
-      Optimization       : 4: Engineer
-    section Mastery
-      Custom Development : 5: Engineer
-      Teaching Others    : 5: Engineer, Students
-```
+#### Audio Engineer Learning Path
+
+| Level | Skills | Complexity | Target |
+|-------|--------|------------|--------|
+| **Fundamentals** | Basic Concepts, System Setup | Beginner | All Engineers |
+| **Advanced** | Complex Scenes, Live Performance | Intermediate | Professional |
+| **Mastery** | Custom Development, Teaching | Expert | Specialists |
 
 ---
 
@@ -812,20 +795,19 @@ function drawSpatialScene(audioObjects, listenerPosition) {
 ### Real-time System Monitoring
 
 ```mermaid
-graph TD
-    A[System Monitor] --> B[CPU Metrics]
-    A --> C[Memory Metrics]
-    A --> D[Audio Metrics]
-    A --> E[Network Metrics]
+flowchart TD
+    A[System Monitor] --> B[CPU]
+    A --> C[Memory]
+    A --> D[Audio]
+    A --> E[Network]
     
-    B --> F[Performance Dashboard]
+    B --> F[Dashboard]
     C --> F
     D --> F
     E --> F
     
-    F --> G[Alert System]
-    F --> H[Optimization Engine]
-    F --> I[Reporting System]
+    F --> G[Alerts]
+    F --> H[Optimization]
 ```
 
 ### Benchmark Results
@@ -879,25 +861,15 @@ graph TD
 
 ### Certification Program
 
-```mermaid
-graph LR
-    A[Foundation] --> B[Practitioner]
-    B --> C[Professional]
-    C --> D[Expert]
-    D --> E[Master Trainer]
-    
-    A1[Basic Concepts] --> A
-    A2[System Setup] --> A
-    A3[Simple Projects] --> A
-    
-    B1[Advanced Features] --> B
-    B2[Complex Scenes] --> B
-    B3[Troubleshooting] --> B
-    
-    C1[Professional Projects] --> C
-    C2[Performance Tuning] --> C
-    C3[Team Leadership] --> C
-```
+#### Certification Path
+
+| Level | Requirements | Duration |
+|-------|-------------|----------|
+| Foundation | Basic Concepts, System Setup | 2 weeks |
+| Practitioner | Advanced Features, Complex Scenes | 1 month |
+| Professional | Professional Projects, Performance Tuning | 3 months |
+| Expert | Advanced Integration, Leadership | 6 months |
+| Master Trainer | Teaching, Curriculum Development | 1 year |
 
 ---
 
@@ -907,13 +879,14 @@ graph LR
 
 #### Carbon Footprint Reduction
 
-```mermaid
-pie title CO2 Emissions by Component
-    "Processing" : 40
-    "Data Storage" : 25
-    "Network Transfer" : 20
-    "User Devices" : 15
-```
+#### CO2 Emissions by Component
+
+| Component | Percentage | Priority |
+|-----------|------------|----------|
+| Processing | 40% | High |
+| Data Storage | 25% | Medium |
+| Network Transfer | 20% | Medium |
+| User Devices | 15% | Low |
 
 #### Sustainable Practices
 
