@@ -13,7 +13,7 @@
 MOTHERSHIP ist ein revolutionäres 3D-Audio-System mit vollständiger EU-Compliance:
 
 ```mermaid
-graph TD
+flowchart LR
     A[Audio Input] --> B[Spatial Processing]
     B --> C[Layer Mixing]
     C --> D[3D Rendering]
