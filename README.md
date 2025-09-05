@@ -19,8 +19,10 @@ Nicht-kommerzielles Geschenk/Showcase. Keine vertraulichen Daten, kein Sponsorin
 
 ### 🎯 Revolutionäre 3D-Audio-Technologie | Revolutionary 3D Audio Technology
 
-*Entwickelt in Kooperation mit Sennheiser & Pioneer DJ*  
-*Developed in cooperation with Sennheiser & Pioneer DJ*
+- Entwickelt in Kooperation mit Sennheiser & Pioneer DJ
++ Präsent / Konzeptstudie für Pioneer DJ & Sennheiser.
++ Unabhängige Demo ohne offizielle Zusammenarbeit oder Endorsement.
++ Marken und Logos gehören den jeweiligen Inhabern.
 
 [🇩🇪 Deutsche Version](#deutsche-version) | [🇬🇧 English Version](#english-version) | [📊 Interactive Demo](#interactive-demo) | [🔬 Technical Specs](#technical-specifications)
 
