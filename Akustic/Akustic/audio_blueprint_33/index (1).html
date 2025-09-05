@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MOTHERSHIP • 3D‑Audio Synthtographie – Blueprint (33 Seiten)</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 1/33</h2>
+      </div>
+      <h3 class="section-title">Titelseite</h3>
+      <div>
+ <div class="kv">
+   <div class="key">Titel</div><div>MOTHERSHIP • Modulare 3D‑Audio‑Synthtographie für kleine Boxen & große Räume</div>
+   <div class="key">Version</div><div>v0.1 • Blueprint</div>
+   <div class="key">Datum</div><div>2025-09-05</div>
+   <div class="key">Umfang</div><div>33 Seiten, Schriftgröße 13pt, A4 (druckfertig)</div>
+   <div class="key">Autor</div><div>Systementwurf basierend auf deiner Vision: mehrschichtige virtuelle Raumarchitektur</div>
+ </div>
+ <div class="callout">
+   <b>Essenz:</b> Ein software‑basiertes „Mothership“ berechnet eine mehrschichtige Raumillusion aus
+   HRTF/BRIR, Convolution, Upmixern, Ambisonics/HOA, optional Crosstalk‑Cancellation und
+   Wellensynthese‑Mustern. Selbst kleine Lautsprecher agieren als „Fenster“ in diese akustische Architektur.
+ </div>
+ <div class="grid-note">
+   <b>Leitmotiv:</b> „Zwei kleine Sterne können ein Firmament vortäuschen.“ – Psychoakustik, sauber kalibriert.
+ </div>
+ </div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 2/33</h2>
+      </div>
+      <h3 class="section-title">Inhalt (TOC)</h3>
+      <div>
+ <ol class="toc">
+   <li>1 Titelseite</li>
+   <li>2 Inhalt (TOC)</li>
+   <li>3 Executive Summary</li>
+   <li>4 Systemprinzipien & Psychoakustik</li>
+   <li>5 Zielbilder & Anwendungsfälle</li>
+   <li>6 Signalgraph & Objekte</li>
+   <li>7 DSP‑Module (Überblick)</li>
+   <li>8 HRTF & BRIR</li>
+   <li>9 Convolution Engine</li>
+   <li>10 Upmix & Downmix</li>
+   <li>11 Ambisonics (HOA)</li>
+   <li>12 Wellenfeldsynthese (WFS)</li>
+   <li>13 Kalibrierung (Mic/IR)</li>
+   <li>14 Raum‑EQ & FIR</li>
+   <li>15 Treiber‑Align: HT/MT/Sub</li>
+   <li>16 Layer‑Konzept (Virtuelle Räume)</li>
+   <li>17 Objekt‑Bewegung A→B→C</li>
+   <li>18 Automation, LFO, Paths</li>
+   <li>19 Routing & Busses</li>
+   <li>20 Realtime‑Engine (Architektur)</li>
+   <li>21 Latenz, Buffering, Gain</li>
+   <li>22 Sicherheit: Limiter/Protect</li>
+   <li>23 Presets, Scenes, Snapshots</li>
+   <li>24 OS‑Pipelines (Windows)</li>
+   <li>25 OS‑Pipelines (macOS)</li>
+   <li>26 OS‑Pipelines (Linux)</li>
+   <li>27 Headphones vs Speakers</li>
+   <li>28 Authoring & Tools</li>
+   <li>29 Performance & Benchmarks</li>
+   <li>30 Formate & I/O</li>
+   <li>31 Tests & Qualität</li>
+   <li>32 Roadmap</li>
+   <li>33 Glossar & Anhänge</li>
+ </ol>
+ </div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 3/33</h2>
+      </div>
+      <h3 class="section-title">Executive Summary</h3>
+      <div><p>Das Mothership ist eine modulare DSP‑Workstation für räumliche Synthtographie: Mehrkanal‑Inhalte, Stereo‑Quellen oder Live‑Signale werden in einem Graphen zu mehrschichtigen Räumen verrechnet. Über HRTF/BRIR‑Faltung, Ambisonics, Upmix, Crosstalk‑Cancellation und gezielte Kalibrierung entsteht eine glaubhafte 3D‑Illusion – selbst über kleine Lautsprecher. Bewegte Objekte (A→B→C), Szenen‑Layer und virtuelle Nebenräume werden wie in einer DAW automatisiert, nur raumbezogen. Ziel: kinoartige Räumlichkeit ohne zwingend kinoartige Hardware.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 4/33</h2>
+      </div>
+      <h3 class="section-title">Systemprinzipien & Psychoakustik</h3>
+      <div><p>Kernprinzip: Das Gehirn rekonstruiert Raum aus Laufzeit‑, Pegel‑ und spektralen Unterschieden. Wir liefern diese Cues digital. HRTF (Head‑Related Transfer Function) bildet Richtung ab; BRIR (Binaural Room Impulse Response) fängt Raumantworten ein. Crosstalk‑Cancellation reduziert Übersprechen bei Lautsprechern. Mit sorgfältiger Gain‑Struktur und Latenzmanagement nutzen wir Psychoakustik statt roher Lautstärkemasse.</p><p>Der Sound wird zur Architektur: Schichten (Layer) formen Nebenräume, Proberaum‑Dämpfung, Kino‑Weite. Kleine Boxen werden Projektoren einer virtuellen Akustikblase.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 5/33</h2>
+      </div>
+      <h3 class="section-title">Zielbilder & Anwendungsfälle</h3>
+      <div><ul class='tight'><li>Wohnraum‑Holografie: 2.0/2.1‑Boxen → 3D‑Illusion für Film, Game, Musik.</li><li>Studio‑Referenz: konstante virtuelle Räume zum Gegenhören von Mixen.</li><li>Ausstellung/Installation: Klangobjekte bewegen sich choreografiert im Raum.</li><li>Barrierearme Immersion: überzeugende Räumlichkeit ohne große Umbauten.</li></ul><div class='callout'><b>Leitfrage:</b> „Wie viel Kino passt in zwei gute Lautsprecher?“</div></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 6/33</h2>
+      </div>
+      <h3 class="section-title">Signalgraph & Objekte</h3>
+      <div><p>Alles ist ein Graph: Nodes sind Quellen, Effekte, Filter, Decoder/Encoder, Mischer und Ausgänge. Klangobjekte besitzen Position (X/Y/Z), Bewegungspfade und Layer‑Anteile. Der Graph ist zur Laufzeit modifizierbar (Hot‑Swap von Modulen), Streams sind getaktet, samplegenau.</p>
+ <div class="svgwrap">
+ <svg viewBox="0 0 780 160" width="100%" height="140">
+   <rect x="10" y="20" width="130" height="36" fill="#f7f7f7" stroke="#ddd"/>
+   <text x="25" y="43" font-size="12">Quelle</text>
+   <rect x="170" y="20" width="130" height="36" fill="#f7f7f7" stroke="#ddd"/>
+   <text x="185" y="43" font-size="12">Upmix/HRTF</text>
+   <rect x="330" y="20" width="130" height="36" fill="#f7f7f7" stroke="#ddd"/>
+   <text x="345" y="43" font-size="12">Convolver</text>
+   <rect x="490" y="20" width="130" height="36" fill="#f7f7f7" stroke="#ddd"/>
+   <text x="505" y="43" font-size="12">X‑Talk Cancel</text>
+   <rect x="650" y="20" width="120" height="36" fill="#f7f7f7" stroke="#ddd"/>
+   <text x="665" y="43" font-size="12">Output</text>
+   <line x1="140" y1="38" x2="170" y2="38" stroke="#bbb"/>
+   <line x1="300" y1="38" x2="330" y2="38" stroke="#bbb"/>
+   <line x1="460" y1="38" x2="490" y2="38" stroke="#bbb"/>
+   <line x1="620" y1="38" x2="650" y2="38" stroke="#bbb"/>
+ </svg>
+ </div>
+ </div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 7/33</h2>
+      </div>
+      <h3 class="section-title">DSP‑Module (Überblick)</h3>
+      <div><ul class='tight'><li><b>HRTF/BRIR‑Renderer</b> (binaural, optional personalisiert)</li><li><b>Convolver</b> (Faltung mit Raumimpulsantworten, FIR‑Filter)</li><li><b>Upmixer/Decoder</b> (Stereo→Surround→Binaural; Atmos/Ambisonics)</li><li><b>Crosstalk‑Cancellation</b> (Lautsprecher‑Stereo mit Tiefenillusion)</li><li><b>EQ/FIR</b> (Raumkorrektur, Treiber‑Align)</li><li><b>Limiter/Protector</b> (Sicherheit, Clip‑Guard)</li></ul></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 8/33</h2>
+      </div>
+      <h3 class="section-title">HRTF & BRIR</h3>
+      <div><p>HRTFs modellieren die Kopfform; BRIRs erweitern dies um Raumreflexionen. Personalisiert (z. B. aus Fotos/Ohr‑Scan) steigt die Präzision. Nicht‑personalisierte HRTFs funktionieren überraschend gut, profitieren aber von feiner EQ‑Anpassung.</p><p>Der Renderer mischt Objektpfade mit HRTF‑Filtern und Raum‑IRs: Richtung (Azimut/Elevation), Entfernung (Z) und Raumanteile formen zusammen die Illusion.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 9/33</h2>
+      </div>
+      <h3 class="section-title">Convolution Engine</h3>
+      <div><p>Faltung (FIR) appliziert Raumimpulsantworten und Korrekturfilter. Langes FIR für Hall/BRIR, kurzes FIR/IIR für tonale Korrektur. Partitionierte Convolution hält Latenzen kontrollierbar und erlaubt Live‑Automation von Wet/Dry‑Anteilen.</p><div class='code'>
+# Pseudokonfiguration (Convolver)
+convolver:
+  irs:
+    - name: "BRIR_Cinema_Wide"
+      file: "assets/irs/brir_cinema_wide.wav"
+      partition: 2048
+    - name: "Damp_Proberaum"
+      file: "assets/irs/damp_smallroom.wav"
+      partition: 1024
+  routing:
+    bus_main:
+      wet: 0.35
+      dry: 0.65
+      xrouting: stereo
+</div></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 10/33</h2>
+      </div>
+      <h3 class="section-title">Upmix & Downmix</h3>
+      <div><p>Stereo‑Quellen lassen sich in pseudo‑räumliche Komponenten zerlegen (Center/Side, Transienten/Fülle), Mehrkanal wird auf binaural abgebildet. Downmix‑Sicherheit: Dialog‑Erhalt, Bass‑Management, Phasenverträglichkeit.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 11/33</h2>
+      </div>
+      <h3 class="section-title">Ambisonics (HOA)</h3>
+      <div><p>Ambisonics speichert Schallfelder unabhängig vom späteren Lautsprecher‑Layout. Das Mothership unterstützt mind. 1.–3. Ordnung (HOA3). Decoding erfolgt in HRTF/BRIR oder Lautsprecher‑Layouts. Objektbewegung lässt sich als Harmonischen‑Rotation ausdrücken.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 12/33</h2>
+      </div>
+      <h3 class="section-title">Wellenfeldsynthese (WFS)</h3>
+      <div><p>Volle WFS braucht viele Lautsprecher. Hier: hybride Ansätze. Wir approximieren Schallquellenfeld per Phase/Delay/EQ über wenige Treiber und stützen Illusion binaural. Messgestützte Optimierung (Mic‑Array) verbessert Sweet‑Spot und Stabilität.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 13/33</h2>
+      </div>
+      <h3 class="section-title">Kalibrierung (Mic/IR)</h3>
+      <div><p>Vor jeder Magie steht die Messung: Impulsantwort am Hörplatz, Laufzeit‑Alignment, Pegelabgleich. Mikrofon‑Sweep → IR‑Berechnung → FIR‑Export. Pro Treiber ein Profil. Profile speichern, Varianten vergleichen, ‚Best of‘ konsolidieren.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 14/33</h2>
+      </div>
+      <h3 class="section-title">Raum‑EQ & FIR</h3>
+      <div><p>Moden glätten (30–300 Hz), Präsenzbereich justieren (2–5 kHz), Höhen fein zeichnen. Lineare FIR‑Korrekturen für Gruppenlaufzeiten; IIR für kleine Eingriffe. Ziel: neutraler, vorhersehbarer Grundklang, auf dem die Illusion baut.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 15/33</h2>
+      </div>
+      <h3 class="section-title">Treiber‑Align: HT/MT/Sub</h3>
+      <div><p>Hochtöner/Mitteltöner/Subs bilden ein kohärentes Mini‑Array: Delays für Akustikzentren, Phasenabgleich an Übergabefrequenzen, Sub‑Stereobreite begrenzen. Ergebnis: harte Phantommitte, scharfe Lokalisation.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 16/33</h2>
+      </div>
+      <h3 class="section-title">Layer‑Konzept (Virtuelle Räume)</h3>
+      <div><p>Mehrere Räume übereinanderlegen: Kino‑Weite, Proberaum‑Dämpfung, Nebenraum‑Leakage. Layer sind unabhängig mischbar (Wet/Dry), automationstauglich und speicherbar pro Szene.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 17/33</h2>
+      </div>
+      <h3 class="section-title">Objekt‑Bewegung A→B→C</h3>
+      <div><p>Objekte erhalten Pfade (Keyframes). Beim Traversieren ändern sich Pegel, HRTF‑Winkel, Reverb‑Send und Filter (z. B. Wanddurchgang → Tiefpass).</p>
+ <div class="svgwrap">
+ <svg viewBox="0 0 780 140" width="100%" height="120">
+   <circle cx="120" cy="90" r="10" fill="#ddd"/><text x="110" y="115" font-size="10">A</text>
+   <circle cx="390" cy="60" r="10" fill="#ddd"/><text x="380" y="85" font-size="10">B</text>
+   <circle cx="660" cy="95" r="10" fill="#ddd"/><text x="650" y="120" font-size="10">C</text>
+   <path d="M120,90 C220,10 490,160 660,95" fill="none" stroke="#bbb" stroke-dasharray="4 3"/>
+ </svg>
+ </div>
+ </div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 18/33</h2>
+      </div>
+      <h3 class="section-title">Automation, LFO, Paths</h3>
+      <div><p>Kurven steuern Bewegung, Raumanteil, EQ, Delay‑Taps. LFOs erzeugen subtile Mikrobewegungen („atmen“), Random‑Walk für organische Texturen. Alle Automationen sind samplegenau und szenenweise speicherbar.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 19/33</h2>
+      </div>
+      <h3 class="section-title">Routing & Busses</h3>
+      <div><p>Quellen → Submix → Layer‑Sends → Masterbus (Limiter). Aux‑Busses für Delay‑Netze, Parallel‑Kompression. Seitensignale getrennt behandeln, um Breite ohne Phasenschäden zu gewinnen.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 20/33</h2>
+      </div>
+      <h3 class="section-title">Realtime‑Engine (Architektur)</h3>
+      <div><p>Kern in C++ (JUCE) oder Rust (cpal/dasp), Graph als Lock‑free DAG, Partitioned Convolution, SIMD‑Optimierungen. Hot‑Reload von Modulen via Plugin‑Schnittstellen.</p><div class='code'>
+engine:
+  audio_backend: "asio/coreaudio/pipewire"
+  samplerate: 48000
+  blocksize: 128
+  graph: lockfree_dag
+  plugins: ["hrtf", "convolver", "xtc", "eq", "limiter"]
+</div></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 21/33</h2>
+      </div>
+      <h3 class="section-title">Latenz, Buffering, Gain</h3>
+      <div><p>Zielroundtrip < 20 ms für Live‑Gefühl. Blockgrößen adaptiv, doppelte Puffer für Convolution. Gain‑Staging: −18 dBFS nominal, Headroom für Peaks, True‑Peak‑Limiter am Ende.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 22/33</h2>
+      </div>
+      <h3 class="section-title">Sicherheit: Limiter/Protect</h3>
+      <div><p>True‑Peak‑Limiter schützt Treiber und Ohren. Watchdog‑Metriken (DC‑Offset, RMS‑Drift, Infraschall) lösen Auto‑Bypass oder Soft‑Mute aus. Szene‑Wechsel sind klickfrei (Crossfade).</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 23/33</h2>
+      </div>
+      <h3 class="section-title">Presets, Scenes, Snapshots</h3>
+      <div><p>Alles ist speicherbar: Layer‑Mischungen, Objektpfade, EQs, IR‑Sets, Routing. Snapshots erlauben A/B‑Vergleiche. Preset‑Packs bilden Kuratierungen für Film, Game, Musik, Sprache.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 24/33</h2>
+      </div>
+      <h3 class="section-title">OS‑Pipelines (Windows)</h3>
+      <div><ul class='tight'><li>WASAPI/ASIO → <span class='badge'>Equalizer APO</span> (Convolver) → HeSuVi → Limiter</li><li>REW‑Filter als TXT importieren</li><li>Option: VST‑Bridge in die Engine einspeisen</li></ul></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 25/33</h2>
+      </div>
+      <h3 class="section-title">OS‑Pipelines (macOS)</h3>
+      <div><ul class='tight'><li>CoreAudio → Loopback/BlackHole → Audio Hijack Chain (Convolver→EQ→Limiter)</li><li>Alternative: Stand‑alone Engine (JUCE) + SoundSource als Frontend</li></ul></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 26/33</h2>
+      </div>
+      <h3 class="section-title">OS‑Pipelines (Linux)</h3>
+      <div><ul class='tight'><li>PipeWire → EasyEffects (Convolver/EQ/Limiter) → oder CamillaDSP als systemweiter FIR‑Host</li><li>LV2/VST Host für modulare Erweiterungen</li></ul></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 27/33</h2>
+      </div>
+      <h3 class="section-title">Headphones vs Speakers</h3>
+      <div><p>Kopfhörer: maximale HRTF‑Präzision, geringe Raumstörung. Lautsprecher: Sweet‑Spot und Crosstalk‑Kontrolle nötig, dafür natürliche Körperwahrnehmung. Hybrid: Kopfhörer‑Mastering, Lautsprecher‑Überprüfung mit XTC‑Feinjustage.</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 28/33</h2>
+      </div>
+      <h3 class="section-title">Authoring & Tools</h3>
+      <div><ul class='tight'><li>Content als Objekte/Spuren mit Pfaden (JSON/OSC)</li><li>Editor: 3D‑View für Quellen & Layer, Timeline für Automation</li><li>Integration: DAW via ReWire/Jack/Virtual Audio Cable</li></ul></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 29/33</h2>
+      </div>
+      <h3 class="section-title">Performance & Benchmarks</h3>
+      <div><p>Messgrößen: CPU‑Last pro Node, Latenz der Convolution, XRUNs, Durchsatz bei 48/96 kHz. Zielprofile: Laptop‑tauglich (≤30 % CPU), Desktop‑Präzision (≤10 % CPU).</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 30/33</h2>
+      </div>
+      <h3 class="section-title">Formate & I/O</h3>
+      <div><ul class='tight'><li>Eingang: WAV/AIFF/FLAC, Mehrkanal, Live‑Inputs</li><li>Steuerung: OSC/MIDI/REST, Preset‑JSON</li><li>Ausgang: Stereo/Binaural, 2.1, optional 5.1 Downmix</li></ul></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 31/33</h2>
+      </div>
+      <h3 class="section-title">Tests & Qualität</h3>
+      <div><p>Unit‑Tests je Modul (Impulse‑Antwort, Latenz), Integrations‑Tests (Graph‑Stabilität), Perzeptive Tests mit Hörpanels (ABX), Mess‑Regressionen (IR‑Vergleich).</p></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 32/33</h2>
+      </div>
+      <h3 class="section-title">Roadmap</h3>
+      <div><ul class='tight'><li>MVP: Binaural + Convolver + EQ + Limiter + Snapshot</li><li>Phase 2: XTC‑Modul, Objektpfade, Preset‑Packs</li><li>Phase 3: HOA‑Decoder, Hybrid‑WFS, Editor‑UI</li></ul></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+    <section class="page">
+      <div class="header">
+        <h1>MOTHERSHIP • 3D‑Audio Synthtographie</h1>
+        <h2>Blueprint • Seite 33/33</h2>
+      </div>
+      <h3 class="section-title">Glossar & Anhänge</h3>
+      <div><p>HRTF, BRIR, FIR, IIR, HOA, WFS, XTC, REW, IR, DAC, ADC, RTP, WASAPI, CoreAudio, PipeWire.</p><hr class='soft'/><div class='code'>
+# Beispiel: Preset‑JSON (verkürzt)
+{
+  "samplerate": 48000,
+  "graph": {
+    "nodes": [
+      {"id":"player1","type":"player","file":"demo.wav"},
+      {"id":"upmix1","type":"upmix","mode":"stereo_wide"},
+      {"id":"hrtf1","type":"hrtf","profile":"generic_01"},
+      {"id":"conv1","type":"convolver","ir":"assets/irs/brir_cinema_wide.wav"},
+      {"id":"eq1","type":"eq","preset":"flat_room_correction"},
+      {"id":"lim1","type":"limiter","true_peak":-1.0}
+    ],
+    "edges": [
+      ["player1","upmix1"],
+      ["upmix1","hrtf1"],
+      ["hrtf1","conv1"],
+      ["conv1","eq1"],
+      ["eq1","lim1"]
+    ]
+  },
+  "scene": {
+    "objects":[
+      {"name":"lead","path":[[0,0,1],[1,0.3,0.8],[2,0.6,0.4]]}
+    ]
+  }
+}
+</div></div>
+      <div class="footer">
+        <div>© 2025 – Arbeitsentwurf</div>
+        <div class="small">A4 • 13pt • Druck/PDF‑bereit</div>
+      </div>
+    </section>
+    
+</body>
+</html>

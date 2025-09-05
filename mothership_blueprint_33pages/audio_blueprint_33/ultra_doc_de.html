@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOTHERSHIP • Technische Dokumentation (ULTRA)</title>
+<style>
+  html,body { background:#fff; color:#111; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+  .page { max-width: 920px; margin: 32px auto; padding: 0 20px 60px; }
+  h1,h2,h3 { line-height: 1.2; margin: 1.2em 0 0.6em; }
+  h1 { font-size: 32px; }
+  h2 { font-size: 24px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+  h3 { font-size: 18px; }
+  p,li { font-size: 16px; line-height: 1.6; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; }
+  pre { background:#fafafa; border:1px solid #eee; border-radius: 8px; padding: 14px; overflow:auto; }
+  .callout { background:#f7fbff; border:1px solid #e2f0ff; border-radius:10px; padding:12px 14px; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .small { color:#666; font-size: 13px; }
+  .toc a { text-decoration:none; color:#0366d6; }
+  .kbd { border:1px solid #ccc; border-bottom-color:#bbb; background:#f8f8f8; padding:1px 6px; border-radius:4px; font-family:inherit; }
+  ul.tight > li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>MOTHERSHIP • Technische Dokumentation (ULTRA)</h1>
+  <p class="small">Stand: 05.09.2025</p>
+
+  <div class="callout">
+    <b>Kurzidee:</b> Synthtographie für Raumklang. Das MOTHERSHIP erzeugt über ein modulares DSP‑Graphsystem mehrschichtige Akustikräume, steuert Objekte entlang Pfaden im X/Y/Z‑Feld und exportiert steuerbare Presets (JSON), die per OSC/MIDI live angebunden werden können.
+  </div>
+
+  <h2>Inhalt</h2>
+  <ol class="toc">
+    <li><a href="#1">Systemübersicht & Architektur</a></li>
+    <li><a href="#2">Psychoakustische Grundlagen</a></li>
+    <li><a href="#3">Pfad‑Automation (ULTRA)</a></li>
+    <li><a href="#4">Layer‑Mischung: XY‑Pad (4‑Ecken)</a></li>
+    <li><a href="#5">Dreiecksmischer: 3‑Layer (Baryzentrik)</a></li>
+    <li><a href="#6">Preset‑Schema (JSON)</a></li>
+    <li><a href="#7">OSC/MIDI‑Mapping (Schema)</a></li>
+    <li><a href="#8">Kalibrierung, Raumkorrektur & Pipeline</a></li>
+    <li><a href="#9">Betrieb: Windows / macOS / Linux</a></li>
+    <li><a href="#10">Gain‑Staging, Latenz & Sicherheit</a></li>
+    <li><a href="#11">Testplan & Abnahme‑Checkliste</a></li>
+    <li><a href="#12">Roadmap & Erweiterungen</a></li>
+  </ol>
+
+  <h2 id="1">1) Systemübersicht & Architektur</h2>
+  <p>Das MOTHERSHIP besteht aus drei Ebenen:</p>
+  <ul class="tight">
+    <li><b>Graph‑Engine:</b> Knoten (Nodes) für Upmix, Convolution (HRTF/BRIR), EQ/FIR, Crosstalk‑Cancellation (XTC), Ambisonics/HOA, Hall/Diffusion, Dynamics. Verbindungen bilden den Signalfluss.</li>
+    <li><b>Control‑Ebene:</b> Interaktive SVG‑Editoren (Pfad/XY/Dreieck) erzeugen Steuerdaten (Objektpositionen, Layergewichte, Easing, Timing).</li>
+    <li><b>Renderer‑Ebene:</b> Binaural (Kopfhörer) oder Stereo‑Lautsprecher mit psychoakustischen Tricks (Laufzeiten/Phasen/EQs), optional XTC.</li>
+  </ul>
+  <div class="grid">
+    <div>
+      <h3>Signalfluss (vereinfacht)</h3>
+      <pre>Source(s)
+  └─ Upmix/Decoder (optional)
+     └─ Scene Objects (X/Y/Z, Pfade)
+        └─ Convolver (HRTF/BRIR) + Room Sends
+           └─ XTC (optional, für Lautsprecher)
+              └─ EQ/FIR (Raumkorrektur)
+                 └─ Limiter (Safety)
+                    └─ Output (HP / 2.0)</pre>
+    </div>
+    <div>
+      <h3>Steuerfluss</h3>
+      <pre>SVG-Editoren (Pfad / XY / Dreieck)
+  └─ Preset-JSON
+     ├─ OSC (Runtime)
+     └─ MIDI (WebMIDI/Bridge)
+Renderer liest: Positionen, Layer, Sends, Easing, Timing
+      </pre>
+    </div>
+  </div>
+
+  <h2 id="2">2) Psychoakustische Grundlagen</h2>
+  <ul>
+    <li><b>HRTF</b> (Head‑Related Transfer Function): Transferfunktionen, die Richtung & Elevation über Kopf/Ohrenform modellieren.</li>
+    <li><b>BRIR</b> (Binaural Room Impulse Response): Impulsantworten von realen Räumen; als Faltung hinzugefügt.</li>
+    <li><b>Ambisonics/HOA:</b> Quellfelder dreh‑/rotierbar, für flexible Projektionen.</li>
+    <li><b>Crosstalk‑Cancellation:</b> Unterdrückt Übersprechen L→rechtes Ohr / R→linkes Ohr; empfindlich für Kopfbewegungen.</li>
+    <li><b>Wellenfeld‑Synthese:</b> Lautsprecherarrays erzeugen virtuelle Quellen im Raum; Prinzipien fließen in die Engine‑Logik ein, ohne Array‑Zwang.</li>
+  </ul>
+
+  <h2 id="3">3) Pfad‑Automation (ULTRA)</h2>
+  <h3>3.1 Geometrie & Glättung</h3>
+  <p>Die Pfadgeometrie entsteht aus Keypoints A/B/C. Eine Catmull‑Rom‑zu‑Bezier‑Approximation glättet den Verlauf. Für konstante Geschwindigkeit wird die SVG‑Path‑Länge verwendet.</p>
+  <pre>// Pseudocode
+path = catmullRomToBezier([A,B,C])
+L = path.getTotalLength()
+P(t) = path.getPointAtLength( t * L )      // t in [0,1]</pre>
+
+  <h3>3.2 Keyframe‑Timing & Segmentverteilung</h3>
+  <p>Zeiten: A=0, B=t<sub>B</sub>, C=t<sub>C</sub>=1 (normiert). Die Zeitachse wird in zwei Segmente aufgeteilt. Optional wird <i>t</i> über Δt quantisiert.</p>
+  <pre>// Mapping (vereinfacht)
+tb = tB / tC
+t_eased = easing(t)
+if quantisiert: t_eased = round(t_eased/Δt)*Δt
+if t_eased <= tb:  s = 0.5 * (t_eased / tb)
+else:              s = 0.5 + 0.5 * ((t_eased - tb) / (1 - tb))
+P = getPointAtLength( s * L )</pre>
+
+  <h3>3.3 Easing</h3>
+  <p>Unterstützt: linear, easeInOutQuad, inCubic, outCubic, S‑Curve (smoothstep: <code>t*t*(3-2*t)</code>).</p>
+
+  <h3>3.4 Quantisierung</h3>
+  <ul>
+    <li><b>Grid‑Snap:</b> Positionsraster 10/20/40/60 px; umschaltbar.</li>
+    <li><b>Zeit‑Quantisierung:</b> Δt = 0.01…0.10 (normiert), vor Segment‑Mapping.</li>
+  </ul>
+
+  <h3>3.5 Z‑Achse („2.5D“)</h3>
+  <p>Wird als 0..1 geführt (Slider/Mausrad). Empfehlung: Z → Room‑Send, Pre‑Delay, Low‑Shelf/LPF, Reverb‑Size.</p>
+
+  <h3>3.6 Mehrspur‑Objekte (Tracks)</h3>
+  <p>Bis zu 4 Travel‑Dots, je Track: Phase ∈ [−0.5…+0.5], Solo/Mute. Sichtbarkeit: Solo dominiert, Mute schaltet aus. Export als <code>tracks[]</code>.</p>
+
+  <h3>3.7 Export (Pfad)</h3>
+  <pre>{
+  "samplerate": 48000,
+  "easing": "inOutQuad",
+  "const_speed": true,
+  "keyframe_time": {"A": 0, "B": 0.5, "C": 1},
+  "keyframes": [
+    {"name":"A","x":-0.6,"y":-0.6},
+    {"name":"B","x": 0.0,"y": 0.7},
+    {"name":"C","x": 0.8,"y":-0.2}
+  ],
+  "tracks": [
+    {"id":"t1","phase":0.0,"solo":false,"mute":false},
+    {"id":"t2","phase":0.2,"solo":false,"mute":false}
+  ],
+  "cursor": {"t":0.123,"x":0.42,"y":0.36,"z":0.60}
+}</pre>
+
+  <h2 id="4">4) Layer‑Mischung: XY‑Pad (4‑Ecken)</h2>
+  <p>Das XY‑Pad mischt vier Archetypen (Kino, Proberaum, Nebenraum, Intim). Gewichte werden bilinear berechnet und auf 100&nbsp;% normiert.</p>
+  <pre>// nx, ny ∈ [0..1]
+w_kino   = nx * ny
+w_probe  = (1-nx) * ny
+w_neben  = (1-nx) * (1-ny)
+w_intim  = nx * (1-ny)
+norm = w_kino + w_probe + w_neben + w_intim</pre>
+  <p>Typisches Mapping: <i>Kino</i> → breite Diffusion/Reverb; <i>Proberaum</i> → Dämpfung/kleiner Raum; <i>Nebenraum</i> → Filter + Early Reflections; <i>Intim</i> → trocken/nah (weniger Send).</p>
+
+  <h2 id="5">5) Dreiecksmischer: 3‑Layer (Baryzentrik)</h2>
+  <p>Der Punkt im Dreieck erzeugt baryzentrische Koordinaten u/v/w, die direkt als Layergewichte dienen (Summe=1). Robust und musikalisch, wenn drei „Archetypen“ genügen.</p>
+  <pre>// Für Dreieck ABC und Punkt P
+v0 = C - A; v1 = B - A; v2 = P - A
+d00 = dot(v0,v0); d01 = dot(v0,v1); d11 = dot(v1,v1)
+d20 = dot(v2,v0); d21 = dot(v2,v1)
+denom = d00*d11 - d01*d01
+v = (d11*d20 - d01*d21)/denom
+w = (d00*d21 - d01*d20)/denom
+u = 1 - v - w
+// u→A(Kino), w→B(Proberaum), v→C(Nebenraum)</pre>
+
+  <h2 id="6">6) Preset‑Schema (JSON)</h2>
+  <p>Einheitliches Ober‑Schema (vereinfacht):</p>
+  <pre>{
+  "graph": {"nodes": [...], "edges": [...] },
+  "scene": {
+    "path": { ... },
+    "xy":   { ... },
+    "tri":  { ... },
+    "morph": {"A": {...}, "B": {...}, "t": 0.0 }
+  },
+  "mapping": {
+    "osc": { ... },
+    "midi": {"channel":1,"cc":{"x":14,"y":15,"morph":16}}
+  },
+  "meta": {
+    "samplerate": 48000,
+    "author": "MOTHERSHIP",
+    "created": "2025-09-05"
+  }
+}</pre>
+
+  <h2 id="7">7) OSC/MIDI‑Mapping (Schema)</h2>
+  <p>Empfohlene Pfade/CCs (anpassbar):</p>
+  <ul class="tight">
+    <li>OSC: <code>/mixer4/x</code>, <code>/mixer4/y</code>, <code>/mixer4/kino</code>, <code>/mixer4/probe</code>, <code>/mixer4/neben</code>, <code>/mixer4/intim</code></li>
+    <li>MIDI: Channel&nbsp;1; CC&nbsp;14&nbsp;(X), CC&nbsp;15&nbsp;(Y), CC&nbsp;16&nbsp;(Morph)</li>
+  </ul>
+  <p>Web‑seitig via WebMIDI; native via Bridge (Node/Python) → OSC an Renderer.</p>
+
+  <h2 id="8">8) Kalibrierung, Raumkorrektur & Pipeline</h2>
+  <ol>
+    <li><b>Messung</b> (REW + Messmikro): Hauptplatz, optional 3–5 Positionen, IR exportieren.</li>
+    <li><b>FIR/EQ</b>: REW‑Filter in CamillaDSP/Equalizer APO laden; Zielkurve leicht abfallend (−1&nbsp;dB/Oct ab 1&nbsp;kHz).</li>
+    <li><b>Convolution</b>: HRTF/BRIR laden; Send‑Level und Pre‑Delay gemäß Z steuern.</li>
+    <li><b>XTC</b> (Lautsprecher optional): moderat dosieren, Head‑Tracking verbessert Stabilität.</li>
+    <li><b>Limiter</b>: True‑Peak‑Limiter am Ende, Headroom ≥ 6&nbsp;dB; Oversampling 2–4×.</li>
+  </ol>
+
+  <h2 id="9">9) Betrieb: Windows / macOS / Linux</h2>
+  <ul>
+    <li><b>Windows</b>: Equalizer APO (+Peace), HeSuVi (Convolver), oder CamillaDSP. Routing via VB‑Audio/Voicemeeter.</li>
+    <li><b>macOS</b>: BlackHole/Loopback (Routing), Audio Hijack/SoundSource für Ketten; CamillaDSP als Präzisions‑FIR.</li>
+    <li><b>Linux</b>: PipeWire + EasyEffects (GUI) oder CamillaDSP (YAML‑Pipelines).</li>
+  </ul>
+
+  <h2 id="10">10) Gain‑Staging, Latenz & Sicherheit</h2>
+  <ul>
+    <li><b>Samplerate</b>: 48&nbsp;kHz (Film/Gaming) oder 96&nbsp;kHz (DSP‑Headroom). Blockgrößen so wählen, dass unter 20 ms Roundtrip bleiben.</li>
+    <li><b>Headroom</b>: −6 dBFS vor Limiter; Convolver/Upmixer können Peaks erhöhen.</li>
+    <li><b>Latenz</b>: Convolver‑FIR‑Länge & Puffergrößen beachten (512–2048 Samples). Live‑Spiel → kürzer, Mastering → länger erlaubt.</li>
+  </ul>
+
+  <h2 id="11">11) Testplan & Abnahme‑Checkliste</h2>
+  <ul>
+    <li>Pfad bewegt Objekt mit konstanter Geschwindigkeit (sichtbar an Sample‑Ticks).</li>
+    <li>Easing wirkt auf Zeitachse (nicht Geometrie), Keyframe‑Timing B/C skaliert Segmente.</li>
+    <li>Quantisierung: Grid/Snap reproduzierbar; Δt greift vor Segment‑Mapping.</li>
+    <li>Mehrspur: Solo/Mute/Phase verhalten sich erwartungsgemäß.</li>
+    <li>XY/3‑Layer: Gewichte summieren sich auf 1.0 (±1e‑6).</li>
+    <li>Export‑JSON ist valide, enthält <code>cursor</code>, <code>tracks</code>, <code>keyframe_time</code>, <code>mapping</code>.</li>
+    <li>Autosave & Share‑URL: Zustand lässt sich laden & zwischen Systemen teilen.</li>
+    <li>Keine Clipping‑Events (Limiter), keine CPU‑Spikes bei Interaktion.</li>
+  </ul>
+
+  <h2 id="12">12) Roadmap & Erweiterungen</h2>
+  <ul>
+    <li><b>Bezier‑Kurveneditor</b> pro Segment (Handles anzeigbar, Kurvenbibliothek).</li>
+    <li><b>Mehr Keyframes</b> (A…F) + Zeitlineal‑Editor.</li>
+    <li><b>Head‑Tracking</b> (Webcam/IMU) → XTC‑Stabilisierung.</li>
+    <li><b>Export‑Adapter</b>: CamillaDSP‑YAML, SoX/FFmpeg‑CLI‑Skripte, DAW‑Automation (Reaper‑Envelopes).</li>
+    <li><b>IR‑Bibliothek</b>: Räume (Studio/Kirche/Kino), Lautsprecher/BRIR‑Sets, individuell ladbar.</li>
+    <li><b>Live‑Bridge</b>: Node/Python‑Dienst (OSC↔MIDI↔WebSocket) für nahtlose Stage‑Kontrolle.</li>
+  </ul>
+
+  <p class="small">© MOTHERSHIP – Diese Doku gehört zum Paket des 33‑Seiten‑Blueprints (interactive.html / interactive_pro.html / interactive_ultra.html) und beschreibt die textliche Spezifikation der Bedienung und Datenformate.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOTHERSHIP • Interaktive Diagramme PRO</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .app { padding: 8mm; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin: 4mm 0 6mm 0; flex-wrap: wrap; }
+  .btn {
+    border:1px solid #ddd; border-radius: 6px; padding: 6px 10px; background:#f8f8f8; cursor:pointer; font-size: 11pt;
+  }
+  .btn:hover { background:#f1f1f1; }
+  .panel { border:1px solid #eee; border-radius: 8px; padding: 6mm; margin-bottom: 10mm; background: #fff; }
+  .panel h3 { margin-top:0; }
+  .row { display:flex; flex-wrap:wrap; gap: 10mm; }
+  .col { flex:1 1 360px; min-width: 320px; }
+  svg { user-select:none; -webkit-user-select:none; touch-action: none; background: #fff; border:1px solid #eee; border-radius: 6px; }
+  .handle { fill:#ffffff; stroke:#333; stroke-width:1.2; cursor:grab; }
+  .handle:active { cursor:grabbing; }
+  .path-main { stroke:#333; stroke-width:1.6; fill:none; }
+  .path-samples { stroke:#bbb; stroke-width:1; fill:none; stroke-dasharray:4 3; }
+  .tick { stroke:#ddd; stroke-width:1; }
+  .grid { stroke:#f0f0f0; stroke-width:1; }
+  .dot { fill:#111; }
+  .dot.ghost { fill:#888; }
+  .label { font-size:10px; fill:#555; }
+  .xy-pad { background: linear-gradient(0deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02)); }
+  .kvgrid { display:grid; grid-template-columns: 130px 1fr; gap: 6px 10px; font-size: 11pt; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:10pt; }
+  .note { font-size:10pt; color:#666; }
+  .switch { display:inline-flex; align-items:center; gap:6px; }
+  .switch input { transform: translateY(1px); }
+  .smallbtn { padding: 4px 8px; font-size:10pt; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>MOTHERSHIP • Interaktive Diagramme PRO</h1>
+      <h2>Pfad-Automation & Layer-Mischung (SVG)</h2>
+    </div>
+
+    <div class="toolbar">
+      <span class="switch"><input id="autosave" type="checkbox" checked> <label for="autosave">Autosave</label></span>
+      <button class="btn" id="resetAll">Alles zurücksetzen</button>
+      <button class="btn" id="shareURL">Share-URL kopieren</button>
+      <button class="btn" id="loadURL">Aus URL laden</button>
+    </div>
+
+    <div class="panel">
+      <h3 class="section-title">A) Pfad-Automation (A→B→C) – konstant, eased, 2.5D</h3>
+      <p>Ziehe A/B/C. Schalte konstante Geschwindigkeit ein, wähle Easing und nutze Z (Tiefe). Optional folgt ein Ghost-Objekt dem Pfad mit Phasenversatz.</p>
+      <div class="row">
+        <div class="col">
+          <svg id="pathSVG" viewBox="0 0 820 440" width="100%" height="360">
+            <!-- Grid -->
+            <g id="gridA"></g>
+            <!-- Smoothed path and sampled preview -->
+            <path id="smoothPath" class="path-main" d=""/>
+            <path id="samplesPath" class="path-samples" d=""/>
+            <!-- Travel dots -->
+            <circle id="travelDot" class="dot" cx="0" cy="0" r="5"></circle>
+            <circle id="travelGhost" class="dot ghost" cx="0" cy="0" r="4" visibility="hidden"></circle>
+            <!-- Points A/B/C -->
+            <g id="points">
+              <circle id="pA" class="handle" cx="120" cy="320" r="8"></circle>
+              <text x="120" y="340" class="label">A</text>
+              <circle id="pB" class="handle" cx="410" cy="110" r="8"></circle>
+              <text x="410" y="130" class="label">B</text>
+              <circle id="pC" class="handle" cx="700" cy="290" r="8"></circle>
+              <text x="700" y="310" class="label">C</text>
+            </g>
+            <!-- Axes -->
+            <line x1="40" y1="380" x2="780" y2="380" class="tick"></line>
+            <line x1="40" y1="40"  x2="40"  y2="380" class="tick"></line>
+            <text x="785" y="395" class="label">X (Breite)</text>
+            <text x="15" y="50" class="label" transform="rotate(-90 15,50)">Y (Höhe)</text>
+          </svg>
+          <div class="toolbar">
+            <input id="tSlider" type="range" min="0" max="1000" value="0" style="width:220px">
+            <label for="zSlider">Z:</label><input id="zSlider" type="range" min="0" max="1000" value="600" style="width:160px">
+            <span class="switch"><input id="constSpeed" type="checkbox" checked> <label for="constSpeed">Konstante Geschwindigkeit</label></span>
+            <span class="switch"><input id="snapGrid" type="checkbox"> <label for="snapGrid">Grid-Snap</label></span>
+          </div>
+          <div class="toolbar">
+            <label for="easeSel">Easing:</label>
+            <select id="easeSel" class="btn smallbtn">
+              <option value="linear">linear</option>
+              <option value="inOutQuad" selected>easeInOutQuad</option>
+              <option value="inCubic">easeInCubic</option>
+              <option value="outCubic">easeOutCubic</option>
+            </select>
+            <span class="switch"><input id="ghostOn" type="checkbox"> <label for="ghostOn">Ghost-Objekt</label></span>
+            <label for="ghostPhase">Ghost-Phase:</label><input id="ghostPhase" type="range" min="-500" max="500" value="200" style="width:160px">
+          </div>
+          <div class="toolbar">
+            <button class="btn" id="resetPath">Pfad reset</button>
+            <button class="btn" id="copyJSON_A">Copy JSON</button>
+            <button class="btn" id="downloadJSON_A">Download JSON</button>
+          </div>
+        </div>
+        <div class="col">
+          <div class="kvgrid">
+            <div>Pfadlänge</div><div><span id="statLen">–</span> px</div>
+            <div>t</div><div><span id="statT">0.000</span></div>
+            <div>Pos</div><div>(<span id="statX">–</span>, <span id="statY">–</span>, Z=<span id="statZ">0.60</span>)</div>
+            <div>Breite X</div><div><span id="statNX">–</span></div>
+            <div>Höhe Y</div><div><span id="statNY">–</span></div>
+            <div>Tiefe Z</div><div><span id="statNZ">–</span></div>
+          </div>
+          <div class="callout small" style="margin-top:6mm">
+            <b>Hinweis:</b> Bei konstanter Geschwindigkeit wird die SVG-Pfadlänge für <i>getPointAtLength</i> genutzt.
+            Easing formt die Zeitachse, nicht die Geometrie.
+          </div>
+          <div class="code mono" id="jsonPreviewA" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="section-title">B) Layer-Mischung (XY-Pad, 4-Ecken – mit Autosave & Share)</h3>
+      <div class="row">
+        <div class="col">
+          <svg id="xySVG" class="xy-pad" viewBox="0 0 420 280" width="100%" height="260">
+            <rect x="20" y="20" width="380" height="200" fill="#fff" stroke="#eee" rx="6"></rect>
+            <g id="xyGrid"></g>
+            <circle id="xyDot" class="handle" cx="210" cy="120" r="8"></circle>
+            <text x="30" y="38" class="label">Proberaum</text>
+            <text x="350" y="38" class="label">Kino</text>
+            <text x="30" y="208" class="label">Nebenraum</text>
+            <text x="340" y="208" class="label">Intim/Dämpf</text>
+          </svg>
+          <div class="toolbar">
+            <button class="btn" id="resetXY">Reset</button>
+            <button class="btn" id="copyJSON_B">Copy JSON</button>
+            <button class="btn" id="downloadJSON_B">Download JSON</button>
+          </div>
+        </div>
+        <div class="col">
+          <div class="kvgrid">
+            <div>X/Y</div><div>(<span id="xyX">0.50</span>, <span id="xyY">0.50</span>)</div>
+            <div>Kino</div><div><span id="wKino">0.25</span></div>
+            <div>Proberaum</div><div><span id="wProbe">0.25</span></div>
+            <div>Nebenraum</div><div><span id="wNeben">0.25</span></div>
+            <div>Intim/Dämpf</div><div><span id="wIntim">0.25</span></div>
+          </div>
+          <div class="code mono" id="jsonPreviewB" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="section-title">C) Dreiecksmischer (3-Layer, baryzentrisch)</h3>
+      <div class="row">
+        <div class="col">
+          <svg id="triSVG" viewBox="0 0 440 400" width="100%" height="360">
+            <polygon id="tri" points="220,50 70,340 370,340" fill="#fff" stroke="#eee"></polygon>
+            <circle id="triDot" class="handle" cx="220" cy="210" r="8"></circle>
+            <text x="220" y="38" class="label" text-anchor="middle">Kino</text>
+            <text x="58" y="352" class="label" text-anchor="start">Proberaum</text>
+            <text x="382" y="352" class="label" text-anchor="end">Nebenraum</text>
+          </svg>
+          <div class="toolbar">
+            <button class="btn" id="resetTri">Reset</button>
+            <button class="btn" id="copyJSON_C">Copy JSON</button>
+            <button class="btn" id="downloadJSON_C">Download JSON</button>
+          </div>
+        </div>
+        <div class="col">
+          <div class="kvgrid">
+            <div>Kino</div><div><span id="tKino">0.33</span></div>
+            <div>Proberaum</div><div><span id="tProbe">0.33</span></div>
+            <div>Nebenraum</div><div><span id="tNeben">0.33</span></div>
+          </div>
+          <div class="code mono" id="jsonPreviewC" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+          <p class="note">Tipp: XY-Pad für 4-Ecken-Morphing, Dreieck für „drei Archetypen“.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>© 2025 – Interaktive Demo PRO • Steuerdaten, keine Audioausgabe.</div>
+      <div class="small"><a href="index.html">Zurück zum 33-Seiten-Blueprint</a> • <a href="interactive.html">Basic-Version</a></div>
+    </div>
+  </div>
+
+<script>
+// ===== Helpers =====
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const easeFns = {
+  linear: t=>t,
+  inOutQuad: t=> (t<.5? 2*t*t : 1-Math.pow(-2*t+2,2)/2),
+  inCubic: t=> t*t*t,
+  outCubic: t=> 1-Math.pow(1-t,3)
+};
+function b64(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+function deb64(s){ try{return JSON.parse(decodeURIComponent(escape(atob(s))))}catch(e){return null}}
+function saveLS(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+function loadLS(key, def){ try{ const v=localStorage.getItem(key); return v? JSON.parse(v): def; }catch(e){ return def; } }
+
+// ===== Global autosave/share =====
+const AUTO_KEY = "mothership_interactive_pro_v1";
+const autosaveEl = document.getElementById('autosave');
+document.getElementById('resetAll').onclick = ()=>{ localStorage.removeItem(AUTO_KEY); location.reload(); };
+document.getElementById('shareURL').onclick = ()=>{
+  const state = collectState();
+  const url = location.origin + location.pathname + "#"+ b64(state);
+  navigator.clipboard.writeText(url);
+  alert("Share-URL kopiert.");
+};
+document.getElementById('loadURL').onclick = ()=>{
+  const h=location.hash.replace(/^#/,'');
+  const st=deb64(h);
+  if(st){ applyState(st); alert("Zustand aus URL geladen."); } else { alert("Keine oder ungültige URL-Daten."); }
+};
+autosaveEl.onchange = ()=>{ if(autosaveEl.checked) saveAll(); };
+
+function saveAll(){ if(!autosaveEl.checked) return; saveLS(AUTO_KEY, collectState()); }
+window.addEventListener('beforeunload', saveAll);
+
+function collectState(){
+  return {
+    A: pathState.collect(),
+    B: xyState.collect(),
+    C: triState.collect()
+  };
+}
+function applyState(st){
+  if(st.A) pathState.apply(st.A);
+  if(st.B) xyState.apply(st.B);
+  if(st.C) triState.apply(st.C);
+}
+
+// ===== A) Path Automation PRO =====
+const pathSVG = document.getElementById('pathSVG');
+const gridA = document.getElementById('gridA');
+const pA = document.getElementById('pA');
+const pB = document.getElementById('pB');
+const pC = document.getElementById('pC');
+const smoothPath = document.getElementById('smoothPath');
+const samplesPath = document.getElementById('samplesPath');
+const travelDot = document.getElementById('travelDot');
+const travelGhost = document.getElementById('travelGhost');
+const tSlider = document.getElementById('tSlider');
+const zSlider = document.getElementById('zSlider');
+const constSpeed = document.getElementById('constSpeed');
+const snapGrid = document.getElementById('snapGrid');
+const easeSel = document.getElementById('easeSel');
+const ghostOn = document.getElementById('ghostOn');
+const ghostPhase = document.getElementById('ghostPhase');
+
+const statLen = document.getElementById('statLen');
+const statT = document.getElementById('statT');
+const statX = document.getElementById('statX');
+const statY = document.getElementById('statY');
+const statZ = document.getElementById('statZ');
+const statNX = document.getElementById('statNX');
+const statNY = document.getElementById('statNY');
+const statNZ = document.getElementById('statNZ');
+const jsonPreviewA = document.getElementById('jsonPreviewA');
+
+const boundsA = {x0:40,y0:40,x1:780,y1:380, gx:20, gy:20};
+
+// grid
+for(let x=boundsA.x0; x<=boundsA.x1; x+=60){
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1', x); l.setAttribute('y1', boundsA.y0);
+  l.setAttribute('x2', x); l.setAttribute('y2', boundsA.y1);
+  l.setAttribute('class','grid');
+  gridA.appendChild(l);
+}
+for(let y=boundsA.y0; y<=boundsA.y1; y+=60){
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1', boundsA.x0); l.setAttribute('y1', y);
+  l.setAttribute('x2', boundsA.x1); l.setAttribute('y2', y);
+  l.setAttribute('class','grid');
+  gridA.appendChild(l);
+}
+
+function getP(el){ return {x: parseFloat(el.getAttribute('cx')), y: parseFloat(el.getAttribute('cy'))}; }
+function setP(el,p){
+  let x = clamp(p.x,boundsA.x0,boundsA.x1);
+  let y = clamp(p.y,boundsA.y0,boundsA.y1);
+  if(snapGrid.checked){
+    x = Math.round(x / boundsA.gx)*boundsA.gx;
+    y = Math.round(y / boundsA.gy)*boundsA.gy;
+  }
+  el.setAttribute('cx', x);
+  el.setAttribute('cy', y);
+}
+
+function smoothPathFromPoints(pts){
+  if(pts.length<2) return "";
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for(let i=0; i<pts.length-1; i++){
+    const p0 = pts[i-1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i+1];
+    const p3 = pts[i+2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x)/6;
+    const cp1y = p1.y + (p2.y - p0.y)/6;
+    const cp2x = p2.x - (p3.x - p1.x)/6;
+    const cp2y = p2.y - (p3.y - p1.y)/6;
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+function updatePath(){
+  const pts = [getP(pA), getP(pB), getP(pC)];
+  const d = smoothPathFromPoints(pts);
+  smoothPath.setAttribute('d', d);
+
+  // Sample for preview only (not used for motion if constSpeed)
+  const steps = 200;
+  let pathLen = 0;
+  try{ pathLen = smoothPath.getTotalLength(); } catch(e){ pathLen = 0; }
+  statLen.textContent = pathLen? pathLen.toFixed(0) : "–";
+
+  let sd = "";
+  for(let i=0;i<=steps;i++){
+    const t = i/steps;
+    let tt = t;
+    // preview path always linear in arc, to visualize spacings
+    if(pathLen>0){
+      const pt = smoothPath.getPointAtLength(t*pathLen);
+      if(i===0) sd += `M ${pt.x} ${pt.y}`; else sd += ` L ${pt.x} ${pt.y}`;
+    }
+  }
+  samplesPath.setAttribute('d', sd);
+
+  updateTravel();
+  saveAll();
+}
+
+function posAt(t){
+  // t in [0,1]; map through easing; then either linear between points or arc-length via SVG
+  const ef = easeFns[easeSel.value] || easeFns.linear;
+  const te = ef(clamp(t,0,1));
+  const pathLen = smoothPath.getTotalLength();
+  if(constSpeed.checked && pathLen>0){
+    const pt = smoothPath.getPointAtLength(te * pathLen);
+    return {x:pt.x, y:pt.y};
+  }else{
+    // approx linear interpolation between the handles
+    const pts = [getP(pA), getP(pB), getP(pC)];
+    const ft = te*(pts.length-1);
+    const i0 = Math.floor(ft);
+    const i1 = Math.min(pts.length-1, i0+1);
+    const w = ft - i0;
+    return { x: lerp(pts[i0].x, pts[i1].x, w), y: lerp(pts[i0].y, pts[i1].y, w) };
+  }
+}
+
+function updateTravel(){
+  const t = parseInt(tSlider.value,10)/1000;
+  const p = posAt(t);
+  travelDot.setAttribute('cx', p.x);
+  travelDot.setAttribute('cy', p.y);
+
+  const nx = (p.x - boundsA.x0)/(boundsA.x1-boundsA.x0);
+  const ny = 1 - (p.y - boundsA.y0)/(boundsA.y1-boundsA.y0);
+  const z = parseInt(zSlider.value,10)/1000; // 0..1
+  statT.textContent = t.toFixed(3);
+  statX.textContent = p.x.toFixed(1);
+  statY.textContent = p.y.toFixed(1);
+  statZ.textContent = z.toFixed(2);
+  statNX.textContent = nx.toFixed(3);
+  statNY.textContent = ny.toFixed(3);
+  statNZ.textContent = z.toFixed(3);
+
+  if(ghostOn.checked){
+    travelGhost.setAttribute('visibility','visible');
+    const phase = parseInt(ghostPhase.value,10)/1000;
+    let tg = t + phase;
+    tg = tg - Math.floor(tg); // wrap
+    const pg = posAt(tg);
+    travelGhost.setAttribute('cx', pg.x);
+    travelGhost.setAttribute('cy', pg.y);
+  } else {
+    travelGhost.setAttribute('visibility','hidden');
+  }
+
+  // JSON preview
+  const pts = [getP(pA), getP(pB), getP(pC)];
+  const preset = {
+    samplerate: 48000,
+    easing: easeSel.value,
+    const_speed: constSpeed.checked,
+    ghost: ghostOn.checked ? {phase: parseFloat((parseInt(ghostPhase.value,10)/1000).toFixed(3))} : null,
+    keyframes: pts.map((pt,i)=>({name: ["A","B","C"][i],
+      x: +(((pt.x-boundsA.x0)/(boundsA.x1-boundsA.x0))*2-1).toFixed(3),
+      y: +(((1-(pt.y-boundsA.y0)/(boundsA.y1-boundsA.y0))*2-1)).toFixed(3)})),
+    cursor: { t:+t.toFixed(3), x:+nx.toFixed(3), y:+ny.toFixed(3), z:+z.toFixed(3) }
+  };
+  jsonPreviewA.textContent = JSON.stringify(preset, null, 2);
+}
+
+function enableDrag(el){
+  let dragging=false, offX=0, offY=0;
+  el.addEventListener('pointerdown', e=>{
+    dragging=true; el.setPointerCapture(e.pointerId);
+    const cx = parseFloat(el.getAttribute('cx'));
+    const cy = parseFloat(el.getAttribute('cy'));
+    offX = e.clientX - cx; offY = e.clientY - cy;
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    setP(el, {x:e.clientX - offX, y:e.clientY - offY});
+    updatePath();
+  });
+  el.addEventListener('pointerup', e=>{ dragging=false; el.releasePointerCapture(e.pointerId); });
+}
+[pA,pB,pC].forEach(enableDrag);
+[tSlider,zSlider,constSpeed,snapGrid,easeSel,ghostOn,ghostPhase].forEach(el=> el.addEventListener('input', ()=>{ updateTravel(); saveAll(); }));
+document.getElementById('resetPath').onclick = ()=>{ setP(pA,{x:120,y:320}); setP(pB,{x:410,y:110}); setP(pC,{x:700,y:290}); tSlider.value=0; zSlider.value=600; easeSel.value='inOutQuad'; constSpeed.checked=true; ghostOn.checked=false; updatePath(); };
+
+document.getElementById('copyJSON_A').onclick = ()=>{ navigator.clipboard.writeText(jsonPreviewA.textContent); };
+document.getElementById('downloadJSON_A').onclick = ()=>{
+  const blob = new Blob([jsonPreviewA.textContent], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'mothership_path_preset_pro.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+
+// ===== B) XY PAD =====
+const xySVG = document.getElementById('xySVG');
+const xyDot = document.getElementById('xyDot');
+const xyGrid = document.getElementById('xyGrid');
+const xyX = document.getElementById('xyX');
+const xyY = document.getElementById('xyY');
+const wKino = document.getElementById('wKino');
+const wProbe = document.getElementById('wProbe');
+const wNeben = document.getElementById('wNeben');
+const wIntim = document.getElementById('wIntim');
+const jsonPreviewB = document.getElementById('jsonPreviewB');
+const xyB = {x0:20,y0:20,x1:400,y1:220};
+
+for(let x=xyB.x0; x<=xyB.x1; x+=38){
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x); l.setAttribute('y1',xyB.y0);
+  l.setAttribute('x2',x); l.setAttribute('y2',xyB.y1);
+  l.setAttribute('class','grid'); xyGrid.appendChild(l);
+}
+for(let y=xyB.y0; y<=xyB.y1; y+=40){
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',xyB.x0); l.setAttribute('y1',y);
+  l.setAttribute('x2',xyB.x1); l.setAttribute('y2',y);
+  l.setAttribute('class','grid'); xyGrid.appendChild(l);
+}
+
+function setXY(x,y){
+  xyDot.setAttribute('cx', clamp(x, xyB.x0, xyB.x1));
+  xyDot.setAttribute('cy', clamp(y, xyB.y0, xyB.y1));
+}
+function getXY(){ return {x: parseFloat(xyDot.getAttribute('cx')), y: parseFloat(xyDot.getAttribute('cy'))}; }
+function updateXY(){
+  const p = getXY();
+  const nx = (p.x - xyB.x0)/(xyB.x1-xyB.x0);
+  const ny = 1 - (p.y - xyB.y0)/(xyB.y1-xyB.y0);
+  xyX.textContent = nx.toFixed(2);
+  xyY.textContent = ny.toFixed(2);
+  const kino = nx*ny, probe=(1-nx)*ny, neben=(1-nx)*(1-ny), intim=nx*(1-ny);
+  const sum = kino+probe+neben+intim||1;
+  const wk=kino/sum, wp=probe/sum, wn=neben/sum, wi=intim/sum;
+  wKino.textContent = wk.toFixed(2);
+  wProbe.textContent = wp.toFixed(2);
+  wNeben.textContent = wn.toFixed(2);
+  wIntim.textContent = wi.toFixed(2);
+  const obj = {mixer4:{kino:wk, proberaum:wp, nebenraum:wn, intim:wi}, xy:{x:nx,y:ny}};
+  jsonPreviewB.textContent = JSON.stringify(obj,null,2);
+  saveAll();
+}
+
+(function enableXY(){
+  let drag=false, offX=0, offY=0;
+  xyDot.addEventListener('pointerdown', e=>{
+    drag=true; xyDot.setPointerCapture(e.pointerId);
+    offX = e.clientX - parseFloat(xyDot.getAttribute('cx'));
+    offY = e.clientY - parseFloat(xyDot.getAttribute('cy'));
+  });
+  xyDot.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    setXY(e.clientX - offX, e.clientY - offY); updateXY();
+  });
+  xyDot.addEventListener('pointerup', e=>{ drag=false; xyDot.releasePointerCapture(e.pointerId); });
+})();
+document.getElementById('resetXY').onclick = ()=>{ setXY(210,120); updateXY(); };
+document.getElementById('copyJSON_B').onclick = ()=>{ navigator.clipboard.writeText(jsonPreviewB.textContent); };
+document.getElementById('downloadJSON_B').onclick = ()=>{
+  const blob = new Blob([jsonPreviewB.textContent], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mothership_layer4_mix_pro.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+
+// ===== C) Triangle Mixer =====
+const triSVG = document.getElementById('triSVG');
+const triDot = document.getElementById('triDot');
+const tKino = document.getElementById('tKino');
+const tProbe = document.getElementById('tProbe');
+const tNeben = document.getElementById('tNeben');
+const jsonPreviewC = document.getElementById('jsonPreviewC');
+const Atri={x:220,y:50}, Btri={x:70,y:340}, Ctri={x:370,y:340};
+
+function getTri(){ return {x: parseFloat(triDot.getAttribute('cx')), y: parseFloat(triDot.getAttribute('cy'))}; }
+function setTri(x,y){ triDot.setAttribute('cx', x); triDot.setAttribute('cy', y); }
+function bary(p){
+  const v0={x:Ctri.x-Atri.x, y:Ctri.y-Atri.y};
+  const v1={x:Btri.x-Atri.x, y:Btri.y-Atri.y};
+  const v2={x:p.x-Atri.x, y:p.y-Atri.y};
+  const d00=v0.x*v0.x+v0.y*v0.y;
+  const d01=v0.x*v1.x+v0.y*v1.y;
+  const d11=v1.x*v1.x+v1.y*v1.y;
+  const d20=v2.x*v0.x+v2.y*v0.y;
+  const d21=v2.x*v1.x+v2.y*v1.y;
+  const denom=d00*d11-d01*d01;
+  let v=(d11*d20-d01*d21)/denom;
+  let w=(d00*d21-d01*d20)/denom;
+  let u=1-v-w;
+  return {u,v,w}; // u=A (Kino), v=C (Nebenraum), w=B (Proberaum)
+}
+function updateTri(){
+  const p=getTri();
+  const bc=bary(p);
+  const kino=clamp(bc.u,0,1), neben=clamp(bc.v,0,1), probe=clamp(bc.w,0,1);
+  const sum=kino+neben+probe||1;
+  const nk=kino/sum, nn=neben/sum, np=probe/sum;
+  tKino.textContent = nk.toFixed(2);
+  tNeben.textContent = nn.toFixed(2);
+  tProbe.textContent = np.toFixed(2);
+  const obj={mixer3:{kino:nk, proberaum:np, nebenraum:nn}, uvw:bc};
+  jsonPreviewC.textContent = JSON.stringify(obj, null, 2);
+  saveAll();
+}
+(function enableTri(){
+  let drag=false, offX=0, offY=0;
+  triDot.addEventListener('pointerdown', e=>{ drag=true; triDot.setPointerCapture(e.pointerId);
+    offX=e.clientX-parseFloat(triDot.getAttribute('cx')); offY=e.clientY-parseFloat(triDot.getAttribute('cy')); });
+  triDot.addEventListener('pointermove', e=>{
+    if(!drag) return; setTri(e.clientX-offX, e.clientY-offY); updateTri();
+  });
+  triDot.addEventListener('pointerup', e=>{ drag=false; triDot.releasePointerCapture(e.pointerId); });
+})();
+document.getElementById('resetTri').onclick = ()=>{ setTri(220,210); updateTri(); };
+document.getElementById('copyJSON_C').onclick = ()=>{ navigator.clipboard.writeText(jsonPreviewC.textContent); };
+document.getElementById('downloadJSON_C').onclick = ()=>{
+  const blob = new Blob([jsonPreviewC.textContent], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mothership_layer3_mix_pro.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+
+// ===== State (load) =====
+const pathState = {
+  collect(){
+    return {
+      A: getP(pA), B: getP(pB), C: getP(pC),
+      t: parseInt(tSlider.value,10), z: parseInt(zSlider.value,10),
+      constSpeed: constSpeed.checked, easing: easeSel.value,
+      ghostOn: ghostOn.checked, ghostPhase: parseInt(ghostPhase.value,10),
+      snap: snapGrid.checked
+    };
+  },
+  apply(s){
+    if(s.A) setP(pA,s.A); if(s.B) setP(pB,s.B); if(s.C) setP(pC,s.C);
+    if(typeof s.t==="number") tSlider.value=s.t;
+    if(typeof s.z==="number") zSlider.value=s.z;
+    if(typeof s.constSpeed==="boolean") constSpeed.checked=s.constSpeed;
+    if(typeof s.easing==="string") easeSel.value=s.easing;
+    if(typeof s.ghostOn==="boolean") ghostOn.checked=s.ghostOn;
+    if(typeof s.ghostPhase==="number") ghostPhase.value=s.ghostPhase;
+    if(typeof s.snap==="boolean") snapGrid.checked=s.snap;
+    updatePath();
+  }
+};
+const xyState = {
+  collect(){
+    return { dot: getXY() };
+  },
+  apply(s){
+    if(s.dot) setXY(s.dot.x, s.dot.y); updateXY();
+  }
+};
+const triState = {
+  collect(){
+    return { dot: getTri() };
+  },
+  apply(s){
+    if(s.dot) setTri(s.dot.x, s.dot.y); updateTri();
+  }
+};
+
+// init
+(function init(){
+  // load from hash or LS
+  const fromHash = deb64(location.hash.replace(/^#/,''));
+  if(fromHash){ applyState(fromHash); }
+  else{
+    const st = loadLS(AUTO_KEY, null);
+    if(st) applyState(st);
+    else { updatePath(); updateXY(); updateTri(); }
+  }
+})();
+</script>
+
+</body>
+</html>

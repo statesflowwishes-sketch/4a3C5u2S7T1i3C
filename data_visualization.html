@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4a3C5u2S7T1i3C - Datenvisualisierung & Analyse</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="assets/interactive.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="assets/interaction.js"></script>
+    <style>
+        .data-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .interactive-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        .interactive-table th, .interactive-table td {
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+        }
+        .interactive-table th {
+            background: #f8f9fa;
+        }
+        .parameter-control {
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>4a3C5u2S7T1i3C - Datenvisualisierung & Analyse</h1>
+        <div class="language-switcher">
+            <button class="language-button active" data-lang="de">🇩🇪 DE</button>
+            <button class="language-button" data-lang="en">🇬🇧 EN</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Akustische Analyse -->
+        <section class="data-section" id="acoustic-analysis">
+            <h2>Akustische Analyse</h2>
+            <div class="visualization-container">
+                <canvas id="frequency-spectrum"></canvas>
+                <div class="parameter-control">
+                    <label>Frequenzbereich:</label>
+                    <input type="range" min="20" max="20000" value="1000" id="freq-range">
+                    <span id="freq-value">1000 Hz</span>
+                </div>
+            </div>
+            
+            <div class="interactive-table-container">
+                <h3>Frequenzband-Analyse</h3>
+                <table class="interactive-table">
+                    <thead>
+                        <tr>
+                            <th>Frequenzband</th>
+                            <th>Amplitude (dB)</th>
+                            <th>Phase (°)</th>
+                            <th>Q-Faktor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="freq-table-body">
+                        <!-- Wird dynamisch gefüllt -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Raumakustik -->
+        <section class="data-section" id="room-acoustics">
+            <h2>Raumakustik-Simulation</h2>
+            <div class="visualization-container">
+                <div id="room-simulation"></div>
+                <div class="controls">
+                    <button class="action-button" id="toggle-reflection">Reflexionen Ein/Aus</button>
+                    <button class="action-button" id="change-room">Raum ändern</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- HRTF Visualisierung -->
+        <section class="data-section" id="hrtf-visualization">
+            <h2>HRTF Analyse</h2>
+            <div class="visualization-container">
+                <canvas id="hrtf-polar"></canvas>
+                <div class="parameter-control">
+                    <label>Elevation:</label>
+                    <input type="range" min="-90" max="90" value="0" id="elevation-range">
+                    <span id="elevation-value">0°</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Echtzeitanalyse -->
+        <section class="data-section" id="realtime-analysis">
+            <h2>Echtzeitanalyse</h2>
+            <div class="visualization-container">
+                <canvas id="realtime-metrics"></canvas>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h4>Latenz</h4>
+                        <span id="latency-value">0 ms</span>
+                    </div>
+                    <div class="metric-card">
+                        <h4>CPU-Last</h4>
+                        <span id="cpu-load">0%</span>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Buffer-Status</h4>
+                        <span id="buffer-status">OK</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Frequenzspektrum-Visualisierung
+        const freqCtx = document.getElementById('frequency-spectrum').getContext('2d');
+        const freqChart = new Chart(freqCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 100}, (_, i) => i * 200),
+                datasets: [{
+                    label: 'Frequenzgang',
+                    data: Array.from({length: 100}, () => Math.random() * 40 - 20),
+                    borderColor: '#4A90E2',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Frequenz (Hz)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Amplitude (dB)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // HRTF Polar-Plot
+        const hrtfCtx = document.getElementById('hrtf-polar').getContext('2d');
+        const hrtfChart = new Chart(hrtfCtx, {
+            type: 'radar',
+            data: {
+                labels: Array.from({length: 12}, (_, i) => i * 30 + '°'),
+                datasets: [{
+                    label: 'HRTF Response',
+                    data: Array.from({length: 12}, () => Math.random() * 20),
+                    borderColor: '#67B26F',
+                    backgroundColor: 'rgba(103, 178, 111, 0.2)'
+                }]
+            },
+            options: {
+                responsive: true,
+                elements: {
+                    line: {
+                        tension: 0.4
+                    }
+                }
+            }
+        });
+
+        // Echtzeitmetriken
+        const realtimeCtx = document.getElementById('realtime-metrics').getContext('2d');
+        const realtimeChart = new Chart(realtimeCtx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 30}, (_, i) => i),
+                datasets: [{
+                    label: 'CPU-Auslastung',
+                    data: Array.from({length: 30}, () => Math.random() * 100),
+                    borderColor: '#FF6B6B'
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: {
+                    duration: 0
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Dynamische Updates
+        setInterval(() => {
+            // Update Echtzeitmetriken
+            const cpuData = realtimeChart.data.datasets[0].data;
+            cpuData.shift();
+            cpuData.push(Math.random() * 100);
+            realtimeChart.update();
+
+            // Update Metrikkarten
+            document.getElementById('latency-value').textContent = 
+                Math.round(Math.random() * 10) + ' ms';
+            document.getElementById('cpu-load').textContent = 
+                Math.round(Math.random() * 100) + '%';
+        }, 1000);
+
+        // Event Listener für Steuerelemente
+        document.getElementById('freq-range').addEventListener('input', (e) => {
+            document.getElementById('freq-value').textContent = e.target.value + ' Hz';
+        });
+
+        document.getElementById('elevation-range').addEventListener('input', (e) => {
+            document.getElementById('elevation-value').textContent = e.target.value + '°';
+            // HRTF neu berechnen und aktualisieren
+            hrtfChart.data.datasets[0].data = 
+                Array.from({length: 12}, () => Math.random() * 20);
+            hrtfChart.update();
+        });
+    </script>
+</body>
+</html>
