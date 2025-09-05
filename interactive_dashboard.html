@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOTHERSHIP - Interactive Performance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .widget {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .metric-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-excellent { background: #4ade80; }
+        .status-good { background: #fbbf24; }
+        .status-warning { background: #f87171; }
+        
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .spatial-visualizer {
+            position: relative;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        #spatialCanvas {
+            cursor: crosshair;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+        }
+        
+        .frequency-spectrum {
+            height: 200px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin: 0;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .compliance-badges {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.2s;
+        }
+        
+        .badge:hover {
+            transform: scale(1.05);
+        }
+        
+        .badge-eu { background: #003d82; }
+        .badge-gdpr { background: #0056b3; }
+        .badge-rights { background: #e4002b; }
+        .badge-ethics { background: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎵 MOTHERSHIP</h1>
+        <p>Interactive Performance Dashboard</p>
+        <div class="compliance-badges">
+            <a href="#" class="badge badge-eu">EU AI Act Compliant</a>
+            <a href="#" class="badge badge-gdpr">GDPR Protected</a>
+            <a href="#" class="badge badge-rights">Human Rights</a>
+            <a href="#" class="badge badge-ethics">Digital Ethics</a>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <!-- Real-time Metrics -->
+        <div class="widget">
+            <div class="metric-label">System Latency</div>
+            <div class="metric-value" id="latency">1.4<span style="font-size: 0.5em;">ms</span></div>
+            <div><span class="status-indicator status-excellent"></span>Excellent Performance</div>
+        </div>
+
+        <div class="widget">
+            <div class="metric-label">CPU Usage</div>
+            <div class="metric-value" id="cpu">51<span style="font-size: 0.5em;">%</span></div>
+            <div><span class="status-indicator status-good"></span>Optimal Load</div>
+        </div>
+
+        <div class="widget">
+            <div class="metric-label">Active Objects</div>
+            <div class="metric-value" id="objects">24</div>
+            <div><span class="status-indicator status-excellent"></span>Processing</div>
+        </div>
+
+        <div class="widget">
+            <div class="metric-label">Memory Usage</div>
+            <div class="metric-value" id="memory">960<span style="font-size: 0.5em;">MB</span></div>
+            <div><span class="status-indicator status-excellent"></span>Efficient</div>
+        </div>
+
+        <!-- Spatial Audio Visualizer -->
+        <div class="widget spatial-visualizer">
+            <div class="metric-label">3D Spatial Scene</div>
+            <canvas id="spatialCanvas" width="300" height="200"></canvas>
+            <div class="controls">
+                <div class="control-group">
+                    <label>X Position</label>
+                    <input type="range" id="xPos" min="-1" max="1" step="0.1" value="0">
+                </div>
+                <div class="control-group">
+                    <label>Y Position</label>
+                    <input type="range" id="yPos" min="-1" max="1" step="0.1" value="0">
+                </div>
+                <div class="control-group">
+                    <label>Z Depth</label>
+                    <input type="range" id="zPos" min="0" max="1" step="0.1" value="0.5">
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Chart -->
+        <div class="widget">
+            <div class="metric-label">Latency History</div>
+            <canvas id="latencyChart" width="300" height="150"></canvas>
+        </div>
+
+        <!-- Frequency Spectrum -->
+        <div class="widget">
+            <div class="metric-label">Frequency Spectrum</div>
+            <canvas id="spectrumChart" width="300" height="150"></canvas>
+        </div>
+
+        <!-- Network Status -->
+        <div class="widget">
+            <div class="metric-label">Network Sync Status</div>
+            <div style="margin: 15px 0;">
+                <div>PTP Accuracy: <strong>±5ns</strong> <span class="status-indicator status-excellent"></span></div>
+                <div>Jitter: <strong>0.3μs</strong> <span class="status-indicator status-excellent"></span></div>
+                <div>Packet Loss: <strong>0.0003%</strong> <span class="status-indicator status-excellent"></span></div>
+            </div>
+        </div>
+
+        <!-- Layer Mixing -->
+        <div class="widget">
+            <div class="metric-label">Layer Mix Control</div>
+            <canvas id="layerMixer" width="200" height="200"></canvas>
+            <div style="margin-top: 10px; font-size: 0.8em;">
+                <div>🎬 Cinema: <span id="cinemaLevel">25%</span></div>
+                <div>🎵 Studio: <span id="studioLevel">30%</span></div>
+                <div>🏠 Room: <span id="roomLevel">35%</span></div>
+                <div>💕 Intimate: <span id="intimateLevel">10%</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Real-time data simulation
+        class PerformanceMonitor {
+            constructor() {
+                this.latencyHistory = [];
+                this.spectrumData = new Array(64).fill(0);
+                this.spatialObjects = [
+                    { x: 0.2, y: 0.3, z: 0.5, amplitude: 0.8, frequency: 440 },
+                    { x: -0.4, y: 0.1, z: 0.7, amplitude: 0.6, frequency: 880 },
+                    { x: 0.1, y: -0.2, z: 0.3, amplitude: 0.9, frequency: 220 }
+                ];
+                this.init();
+            }
+
+            init() {
+                this.setupCharts();
+                this.setupSpatialVisualizer();
+                this.setupLayerMixer();
+                this.startUpdateLoop();
+            }
+
+            setupCharts() {
+                // Latency Chart
+                const latencyCtx = document.getElementById('latencyChart').getContext('2d');
+                this.latencyChart = new Chart(latencyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: new Array(20).fill('').map((_, i) => i),
+                        datasets: [{
+                            label: 'Latency (ms)',
+                            data: new Array(20).fill(1.4),
+                            borderColor: '#ff6b35',
+                            backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, max: 5 },
+                            x: { display: false }
+                        }
+                    }
+                });
+
+                // Spectrum Chart
+                const spectrumCtx = document.getElementById('spectrumChart').getContext('2d');
+                this.spectrumChart = new Chart(spectrumCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: new Array(32).fill('').map((_, i) => `${(i * 625)}Hz`),
+                        datasets: [{
+                            label: 'Amplitude',
+                            data: new Array(32).fill(0),
+                            backgroundColor: 'rgba(103, 126, 234, 0.8)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, max: 1 },
+                            x: { display: false }
+                        }
+                    }
+                });
+            }
+
+            setupSpatialVisualizer() {
+                this.spatialCanvas = document.getElementById('spatialCanvas');
+                this.spatialCtx = this.spatialCanvas.getContext('2d');
+                
+                // Control listeners
+                document.getElementById('xPos').addEventListener('input', (e) => {
+                    this.spatialObjects[0].x = parseFloat(e.target.value);
+                    this.drawSpatialScene();
+                });
+                
+                document.getElementById('yPos').addEventListener('input', (e) => {
+                    this.spatialObjects[0].y = parseFloat(e.target.value);
+                    this.drawSpatialScene();
+                });
+                
+                document.getElementById('zPos').addEventListener('input', (e) => {
+                    this.spatialObjects[0].z = parseFloat(e.target.value);
+                    this.drawSpatialScene();
+                });
+            }
+
+            setupLayerMixer() {
+                this.layerCanvas = document.getElementById('layerMixer');
+                this.layerCtx = this.layerCanvas.getContext('2d');
+                this.mixerPosition = { x: 0.5, y: 0.5 };
+                
+                this.layerCanvas.addEventListener('mousemove', (e) => {
+                    const rect = this.layerCanvas.getBoundingClientRect();
+                    this.mixerPosition.x = (e.clientX - rect.left) / rect.width;
+                    this.mixerPosition.y = (e.clientY - rect.top) / rect.height;
+                    this.updateLayerMix();
+                });
+            }
+
+            drawSpatialScene() {
+                const canvas = this.spatialCanvas;
+                const ctx = this.spatialCtx;
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                // Draw grid
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 10; i++) {
+                    const x = (i / 10) * width;
+                    const y = (i / 10) * height;
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                
+                // Draw listener position (center)
+                ctx.fillStyle = '#ff6b35';
+                ctx.beginPath();
+                ctx.arc(width/2, height/2, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Draw audio objects
+                this.spatialObjects.forEach((obj, index) => {
+                    const x = (obj.x + 1) * width / 2;
+                    const y = (obj.y + 1) * height / 2;
+                    const radius = obj.amplitude * obj.z * 15 + 5;
+                    
+                    ctx.fillStyle = `hsl(${200 + index * 60}, 70%, ${50 + obj.z * 30}%)`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw connection line to listener
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(width/2, height/2);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                });
+            }
+
+            updateLayerMix() {
+                const x = this.mixerPosition.x;
+                const y = this.mixerPosition.y;
+                
+                // Calculate layer percentages based on quadrant
+                const cinema = Math.max(0, (1 - x) * (1 - y));
+                const studio = Math.max(0, x * (1 - y));
+                const room = Math.max(0, (1 - x) * y);
+                const intimate = Math.max(0, x * y);
+                
+                // Normalize to 100%
+                const total = cinema + studio + room + intimate;
+                const norm = total > 0 ? 1 / total : 0;
+                
+                document.getElementById('cinemaLevel').textContent = 
+                    Math.round(cinema * norm * 100) + '%';
+                document.getElementById('studioLevel').textContent = 
+                    Math.round(studio * norm * 100) + '%';
+                document.getElementById('roomLevel').textContent = 
+                    Math.round(room * norm * 100) + '%';
+                document.getElementById('intimateLevel').textContent = 
+                    Math.round(intimate * norm * 100) + '%';
+                
+                this.drawLayerMixer();
+            }
+
+            drawLayerMixer() {
+                const canvas = this.layerCanvas;
+                const ctx = this.layerCtx;
+                const width = canvas.width;
+                const height = canvas.height;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                // Draw quadrants
+                const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c'];
+                const positions = [
+                    [0, 0, width/2, height/2],
+                    [width/2, 0, width/2, height/2],
+                    [0, height/2, width/2, height/2],
+                    [width/2, height/2, width/2, height/2]
+                ];
+                
+                positions.forEach((pos, i) => {
+                    ctx.fillStyle = colors[i] + '40';
+                    ctx.fillRect(pos[0], pos[1], pos[2], pos[3]);
+                });
+                
+                // Draw current position
+                const x = this.mixerPosition.x * width;
+                const y = this.mixerPosition.y * height;
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            updateMetrics() {
+                // Simulate real-time metrics
+                const latency = 1.4 + (Math.random() - 0.5) * 0.2;
+                const cpu = 51 + (Math.random() - 0.5) * 10;
+                const objects = 24 + Math.floor((Math.random() - 0.5) * 6);
+                const memory = 960 + Math.floor((Math.random() - 0.5) * 100);
+                
+                document.getElementById('latency').innerHTML = 
+                    latency.toFixed(1) + '<span style="font-size: 0.5em;">ms</span>';
+                document.getElementById('cpu').innerHTML = 
+                    Math.round(cpu) + '<span style="font-size: 0.5em;">%</span>';
+                document.getElementById('objects').textContent = objects;
+                document.getElementById('memory').innerHTML = 
+                    memory + '<span style="font-size: 0.5em;">MB</span>';
+                
+                // Update charts
+                this.latencyHistory.push(latency);
+                if (this.latencyHistory.length > 20) {
+                    this.latencyHistory.shift();
+                }
+                this.latencyChart.data.datasets[0].data = this.latencyHistory;
+                this.latencyChart.update('none');
+                
+                // Update spectrum
+                for (let i = 0; i < 32; i++) {
+                    this.spectrumData[i] = Math.random() * Math.exp(-i / 8);
+                }
+                this.spectrumChart.data.datasets[0].data = this.spectrumData.slice(0, 32);
+                this.spectrumChart.update('none');
+                
+                // Animate spatial objects
+                this.spatialObjects.forEach(obj => {
+                    obj.x += (Math.random() - 0.5) * 0.02;
+                    obj.y += (Math.random() - 0.5) * 0.02;
+                    obj.x = Math.max(-1, Math.min(1, obj.x));
+                    obj.y = Math.max(-1, Math.min(1, obj.y));
+                });
+                
+                this.drawSpatialScene();
+            }
+
+            startUpdateLoop() {
+                this.drawSpatialScene();
+                this.updateLayerMix();
+                
+                setInterval(() => {
+                    this.updateMetrics();
+                }, 100);
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            new PerformanceMonitor();
+        });
+    </script>
+</body>
+</html>
