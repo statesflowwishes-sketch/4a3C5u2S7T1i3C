@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOTHERSHIP • Interaktive Diagramme ULTRA</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .app { padding: 8mm; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin: 4mm 0 6mm 0; flex-wrap: wrap; }
+  .btn { border:1px solid #ddd; border-radius: 6px; padding: 6px 10px; background:#f8f8f8; cursor:pointer; font-size: 11pt;}
+  .btn:hover { background:#f1f1f1; }
+  .panel { border:1px solid #eee; border-radius: 8px; padding: 6mm; margin-bottom: 10mm; background: #fff; }
+  .panel h3 { margin-top:0; }
+  .row { display:flex; flex-wrap:wrap; gap: 10mm; }
+  .col { flex:1 1 380px; min-width: 340px; }
+  svg { user-select:none; -webkit-user-select:none; touch-action: none; background: #fff; border:1px solid #eee; border-radius: 6px; }
+  .handle { fill:#ffffff; stroke:#333; stroke-width:1.2; cursor:grab; }
+  .handle:active { cursor:grabbing; }
+  .path-main { stroke:#333; stroke-width:1.6; fill:none; }
+  .path-samples { stroke:#bbb; stroke-width:1; fill:none; stroke-dasharray:4 3; }
+  .tick { stroke:#ddd; stroke-width:1; }
+  .grid { stroke:#f0f0f0; stroke-width:1; }
+  .dot { fill:#111; }
+  .dot.t1 { fill:#111; }
+  .dot.t2 { fill:#0072b2; }
+  .dot.t3 { fill:#d55e00; }
+  .dot.t4 { fill:#009e73; }
+  .label { font-size:10px; fill:#555; }
+  .kvgrid { display:grid; grid-template-columns: 150px 1fr; gap: 6px 10px; font-size: 11pt; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:10pt; }
+  .note { font-size:10pt; color:#666; }
+  .switch { display:inline-flex; align-items:center; gap:6px; }
+  .switch input { transform: translateY(1px); }
+  .smallbtn { padding: 4px 8px; font-size:10pt; }
+  table.map { width:100%; border-collapse: collapse; font-size: 10pt; }
+  table.map th, table.map td { border:1px solid #eee; padding:6px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>MOTHERSHIP • Interaktive Diagramme ULTRA</h1>
+    <h2>Turbo-Upgrades: Timing, Easing, Quantisierung, Multi-Objekte, Morphing, OSC/MIDI</h2>
+  </div>
+
+  <div class="toolbar">
+    <span class="switch"><input id="autosave" type="checkbox" checked> <label for="autosave">Autosave</label></span>
+    <button class="btn" id="resetAll">Alles zurücksetzen</button>
+    <button class="btn" id="shareURL">Share-URL kopieren</button>
+    <button class="btn" id="loadURL">Aus URL laden</button>
+    <button class="btn" id="exportAll">Alles als JSON</button>
+    <button class="btn" id="copyAll">Copy</button>
+    <button class="btn" id="downloadAll">Download</button>
+  </div>
+
+  <div class="panel">
+    <h3 class="section-title">A) Pfad-Automation – Keyframe-Timing, Easing, Quantisierung, Mehrspur</h3>
+    <div class="row">
+      <div class="col">
+        <svg id="pathSVG" viewBox="0 0 840 460" width="100%" height="360">
+          <g id="gridA"></g>
+          <path id="smoothPath" class="path-main" d=""/>
+          <path id="samplesPath" class="path-samples" d=""/>
+          <!-- Multi travel dots -->
+          <g id="travelDots"></g>
+          <!-- Handles -->
+          <g id="handles">
+            <circle id="pA" class="handle" cx="120" cy="320" r="8"></circle>
+            <text x="120" y="340" class="label">A</text>
+            <circle id="pB" class="handle" cx="420" cy="110" r="8"></circle>
+            <text x="420" y="130" class="label">B</text>
+            <circle id="pC" class="handle" cx="720" cy="300" r="8"></circle>
+            <text x="720" y="320" class="label">C</text>
+          </g>
+          <line x1="40" y1="400" x2="800" y2="400" class="tick"></line>
+          <line x1="40" y1="40"  x2="40"  y2="400" class="tick"></line>
+          <text x="805" y="415" class="label">X (Breite)</text>
+          <text x="15" y="50" class="label" transform="rotate(-90 15,50)">Y (Höhe)</text>
+        </svg>
+
+        <div class="toolbar">
+          <label for="tSlider">Zeit:</label>
+          <input id="tSlider" type="range" min="0" max="1000" value="0" style="width:220px">
+          <label for="zSlider">Z:</label>
+          <input id="zSlider" type="range" min="0" max="1000" value="600" style="width:160px" title="Mausrad über Canvas ändert Z">
+          <span class="switch"><input id="constSpeed" type="checkbox" checked> <label for="constSpeed">Konstante Geschwindigkeit</label></span>
+        </div>
+
+        <div class="toolbar">
+          <label for="easeSel">Easing:</label>
+          <select id="easeSel" class="btn smallbtn">
+            <option value="linear">linear</option>
+            <option value="inOutQuad" selected>easeInOutQuad</option>
+            <option value="inCubic">easeInCubic</option>
+            <option value="outCubic">easeOutCubic</option>
+            <option value="sCurve">S-Curve (smoothstep)</option>
+          </select>
+          <span class="switch"><input id="snapGrid" type="checkbox"> <label for="snapGrid">Grid-Snap</label></span>
+          <label for="gridSize">Grid:</label>
+          <select id="gridSize" class="btn smallbtn">
+            <option>10</option><option selected>20</option><option>40</option><option>60</option>
+          </select>
+          <span class="switch"><input id="qTime" type="checkbox"> <label for="qTime">Zeit-Quantisierung</label></span>
+          <label for="qStep">Δt:</label>
+          <select id="qStep" class="btn smallbtn">
+            <option value="0.01">0.01</option>
+            <option value="0.02" selected>0.02</option>
+            <option value="0.05">0.05</option>
+            <option value="0.10">0.10</option>
+          </select>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn" id="addTrack">Track +</button>
+          <button class="btn" id="removeTrack">Track −</button>
+          <button class="btn" id="resetPath">Pfad reset</button>
+          <button class="btn" id="copyJSON_A">Copy JSON</button>
+          <button class="btn" id="downloadJSON_A">Download JSON</button>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="kvgrid">
+          <div>Pfadlänge</div><div><span id="statLen">–</span> px</div>
+          <div>t</div><div><span id="statT">0.000</span> (0..1)</div>
+          <div>Pos</div><div>(<span id="statX">–</span>, <span id="statY">–</span>, Z=<span id="statZ">0.60</span>)</div>
+          <div>Breite X</div><div><span id="statNX">–</span></div>
+          <div>Höhe Y</div><div><span id="statNY">–</span></div>
+          <div>Tiefe Z</div><div><span id="statNZ">–</span></div>
+          <div>Segmentzeiten</div>
+          <div>
+            A: <input id="tA" type="number" min="0" step="0.01" value="0" style="width:70px"> 
+            B: <input id="tB" type="number" min="0" step="0.01" value="0.5" style="width:70px"> 
+            C: <input id="tC" type="number" min="0" step="0.01" value="1.0" style="width:70px">
+            <span class="small">C ist Gesamtdauer (normiert)</span>
+          </div>
+          <div>Tracks</div>
+          <div id="tracksList"></div>
+        </div>
+        <div class="callout small" style="margin-top:6mm">
+          <b>Timing:</b> A=0, B und C definieren Keyframe-Zeiten (0..1). Konstante Laufgeschwindigkeit nutzt die Pfadlänge, die Zeitverteilung richtet die Bewegung an den Keyframes aus.
+        </div>
+        <div class="code mono" id="jsonPreviewA" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="section-title">B) Layer-Mischung (XY-Pad, 4-Ecken) – mit Mapping</h3>
+    <div class="row">
+      <div class="col">
+        <svg id="xySVG" viewBox="0 0 420 280" width="100%" height="260">
+          <rect x="20" y="20" width="380" height="200" fill="#fff" stroke="#eee" rx="6"></rect>
+          <g id="xyGrid"></g>
+          <circle id="xyDot" class="handle" cx="210" cy="120" r="8"></circle>
+          <text x="30" y="38" class="label">Proberaum</text>
+          <text x="350" y="38" class="label">Kino</text>
+          <text x="30" y="208" class="label">Nebenraum</text>
+          <text x="340" y="208" class="label">Intim/Dämpf</text>
+        </svg>
+        <div class="toolbar">
+          <button class="btn" id="resetXY">Reset</button>
+          <button class="btn" id="copyJSON_B">Copy JSON</button>
+          <button class="btn" id="downloadJSON_B">Download JSON</button>
+        </div>
+      </div>
+      <div class="col">
+        <div class="kvgrid">
+          <div>X/Y</div><div>(<span id="xyX">0.50</span>, <span id="xyY">0.50</span>)</div>
+          <div>Kino</div><div><span id="wKino">0.25</span></div>
+          <div>Proberaum</div><div><span id="wProbe">0.25</span></div>
+          <div>Nebenraum</div><div><span id="wNeben">0.25</span></div>
+          <div>Intim/Dämpf</div><div><span id="wIntim">0.25</span></div>
+        </div>
+        <table class="map">
+          <tr><th colspan="3">OSC/MIDI Mapping (Schema)</th></tr>
+          <tr><td>OSC</td><td colspan="2"><code class="mono">/mixer4/x, /mixer4/y, /mixer4/kino, /mixer4/probe, /mixer4/neben, /mixer4/intim</code></td></tr>
+          <tr><td>MIDI CC</td><td>X</td><td><input id="ccX" type="number" min="0" max="127" value="14" style="width:60px"></td></tr>
+          <tr><td></td><td>Y</td><td><input id="ccY" type="number" min="0" max="127" value="15" style="width:60px"></td></tr>
+          <tr><td></td><td>Morph A↔B</td><td><input id="ccMorph" type="number" min="0" max="127" value="16" style="width:60px"></td></tr>
+        </table>
+        <div class="toolbar">
+          <button class="btn" id="copyMap">Copy Mapping</button>
+        </div>
+        <div class="code mono" id="jsonPreviewB" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3 class="section-title">C) Dreiecksmischer (3-Layer) & Preset-Morphing A↔B</h3>
+    <div class="row">
+      <div class="col">
+        <svg id="triSVG" viewBox="0 0 440 400" width="100%" height="360">
+          <polygon id="tri" points="220,50 70,340 370,340" fill="#fff" stroke="#eee"></polygon>
+          <circle id="triDot" class="handle" cx="220" cy="210" r="8"></circle>
+          <text x="220" y="38" class="label" text-anchor="middle">Kino</text>
+          <text x="58" y="352" class="label" text-anchor="start">Proberaum</text>
+          <text x="382" y="352" class="label" text-anchor="end">Nebenraum</text>
+        </svg>
+        <div class="toolbar">
+          <button class="btn" id="presetA">Preset A</button>
+          <button class="btn" id="presetB">Preset B</button>
+          <label for="morph">Morph:</label>
+          <input id="morph" type="range" min="0" max="1000" value="0" style="width:220px">
+          <button class="btn" id="resetTri">Reset</button>
+          <button class="btn" id="copyJSON_C">Copy JSON</button>
+          <button class="btn" id="downloadJSON_C">Download JSON</button>
+        </div>
+      </div>
+      <div class="col">
+        <div class="kvgrid">
+          <div>Kino</div><div><span id="tKino">0.33</span></div>
+          <div>Proberaum</div><div><span id="tProbe">0.33</span></div>
+          <div>Nebenraum</div><div><span id="tNeben">0.33</span></div>
+        </div>
+        <div class="code mono" id="jsonPreviewC" style="margin-top:6mm; max-height:260px; overflow:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>© 2025 – Interaktive Demo ULTRA • Steuerdaten, keine Audioausgabe.</div>
+    <div class="small"><a href="index.html">Zurück zum 33-Seiten-Blueprint</a> • <a href="interactive.html">Basic</a> • <a href="interactive_pro.html">Pro</a></div>
+  </div>
+</div>
+
+<script>
+// ===== Helpers =====
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const easeFns = {
+  linear: t=>t,
+  inOutQuad: t=> (t<.5? 2*t*t : 1-Math.pow(-2*t+2,2)/2),
+  inCubic: t=> t*t*t,
+  outCubic: t=> 1-Math.pow(1-t,3),
+  sCurve: t=> t*t*(3-2*t) // smoothstep
+};
+function b64(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))); }
+function deb64(s){ try{return JSON.parse(decodeURIComponent(escape(atob(s))))}catch(e){return null} }
+function saveLS(k,v){ try{localStorage.setItem(k, JSON.stringify(v));}catch(e){} }
+function loadLS(k,d){ try{const v=localStorage.getItem(k); return v? JSON.parse(v): d;}catch(e){return d;} }
+
+const AUTO_KEY="mship_ultra_v1";
+
+// ===== Global state ops =====
+function collectAll(){
+  return { A: pathState.collect(), B: xyState.collect(), C: triState.collect(), map: mappingState.collect() };
+}
+function applyAll(st){
+  if(st.A) pathState.apply(st.A);
+  if(st.B) xyState.apply(st.B);
+  if(st.C) triState.apply(st.C);
+  if(st.map) mappingState.apply(st.map);
+}
+function saveAll(){ if(document.getElementById('autosave').checked) saveLS(AUTO_KEY, collectAll()); }
+
+document.getElementById('resetAll').onclick = ()=>{ localStorage.removeItem(AUTO_KEY); location.reload(); };
+document.getElementById('shareURL').onclick = ()=>{
+  const url = location.origin + location.pathname + "#" + b64(collectAll());
+  navigator.clipboard.writeText(url); alert("Share-URL kopiert.");
+};
+document.getElementById('loadURL').onclick = ()=>{
+  const h=location.hash.replace(/^#/,'');
+  const st=deb64(h);
+  if(st){ applyAll(st); alert("Zustand aus URL geladen."); } else { alert("Keine/ungültige Daten im Hash."); }
+};
+document.getElementById('exportAll').onclick = ()=>{
+  const s = JSON.stringify(collectAll(),null,2);
+  document.getElementById('jsonPreviewA').textContent = s;
+};
+document.getElementById('copyAll').onclick = ()=>{ navigator.clipboard.writeText(JSON.stringify(collectAll(),null,2)); };
+document.getElementById('downloadAll').onclick = ()=>{
+  const blob = new Blob([JSON.stringify(collectAll(),null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mothership_ultra_all.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+
+// ===== A) Path Automation ULTRA =====
+const pathSVG = document.getElementById('pathSVG');
+const gridA = document.getElementById('gridA');
+const pA = document.getElementById('pA');
+const pB = document.getElementById('pB');
+const pC = document.getElementById('pC');
+const smoothPath = document.getElementById('smoothPath');
+const samplesPath = document.getElementById('samplesPath');
+const travelDots = document.getElementById('travelDots');
+const tSlider = document.getElementById('tSlider');
+const zSlider = document.getElementById('zSlider');
+const constSpeed = document.getElementById('constSpeed');
+const easeSel = document.getElementById('easeSel');
+const snapGrid = document.getElementById('snapGrid');
+const gridSize = document.getElementById('gridSize');
+const qTime = document.getElementById('qTime');
+const qStep = document.getElementById('qStep');
+const statLen = document.getElementById('statLen');
+const statT = document.getElementById('statT');
+const statX = document.getElementById('statX');
+const statY = document.getElementById('statY');
+const statZ = document.getElementById('statZ');
+const statNX = document.getElementById('statNX');
+const statNY = document.getElementById('statNY');
+const statNZ = document.getElementById('statNZ');
+const tA = document.getElementById('tA');
+const tB = document.getElementById('tB');
+const tC = document.getElementById('tC');
+const tracksList = document.getElementById('tracksList');
+const jsonPreviewA = document.getElementById('jsonPreviewA');
+const boundsA = {x0:40,y0:40,x1:800,y1:400};
+let tracks = []; // {id,color,phase,solo,muted,el}
+
+function addTrack(color){
+  const id = "t"+(tracks.length+1);
+  const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('class','dot '+id);
+  dot.setAttribute('r', tracks.length===0? 6:4);
+  dot.setAttribute('cx', 0); dot.setAttribute('cy', 0);
+  travelDots.appendChild(dot);
+  const row = document.createElement('div');
+  row.innerHTML = `<span class="badge">${id.toUpperCase()}</span>
+    <span style="display:inline-block;width:10px;height:10px;background:${color};border:1px solid #ccc;margin:0 6px;vertical-align:middle"></span>
+    Phase: <input data-id="${id}" class="phase" type="range" min="-500" max="500" value="${(tracks.length? 200:0)}" style="width:120px">
+    <span class="switch"><input data-id="${id}" class="solo" type="checkbox"> <label>Solo</label></span>
+    <span class="switch"><input data-id="${id}" class="mute" type="checkbox"> <label>Mute</label></span>`;
+  tracksList.appendChild(row);
+  const t = {id, color, phase: (tracks.length? 0.2:0), solo:false, muted:false, el:dot};
+  tracks.push(t);
+  row.querySelector('.phase').addEventListener('input', e=>{ t.phase = parseInt(e.target.value,10)/1000; updateTravel(); saveAll(); });
+  row.querySelector('.solo').addEventListener('change', e=>{ t.solo = e.target.checked; updateTravel(); saveAll(); });
+  row.querySelector('.mute').addEventListener('change', e=>{ t.muted = e.target.checked; updateTravel(); saveAll(); });
+  updateTravel();
+}
+function removeTrack(){
+  if(!tracks.length) return;
+  const t = tracks.pop();
+  t.el.remove();
+  tracksList.lastChild.remove();
+  updateTravel();
+  saveAll();
+}
+
+document.getElementById('addTrack').onclick = ()=>{
+  const palette = ['#111','#0072b2','#d55e00','#009e73'];
+  if(tracks.length<4) addTrack(palette[tracks.length]);
+};
+document.getElementById('removeTrack').onclick = ()=> removeTrack();
+
+// grid
+function drawGrid(){
+  gridA.innerHTML='';
+  const step = parseInt(gridSize.value,10);
+  for(let x=boundsA.x0; x<=boundsA.x1; x+=step){
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1', x); l.setAttribute('y1', boundsA.y0);
+    l.setAttribute('x2', x); l.setAttribute('y2', boundsA.y1);
+    l.setAttribute('class','grid'); gridA.appendChild(l);
+  }
+  for(let y=boundsA.y0; y<=boundsA.y1; y+=step){
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1', boundsA.x0); l.setAttribute('y1', y);
+    l.setAttribute('x2', boundsA.x1); l.setAttribute('y2', y);
+    l.setAttribute('class','grid'); gridA.appendChild(l);
+  }
+}
+gridSize.addEventListener('change', ()=>{ drawGrid(); });
+drawGrid();
+
+function getP(el){ return {x: parseFloat(el.getAttribute('cx')), y: parseFloat(el.getAttribute('cy'))}; }
+function setP(el,p){
+  const gs = parseInt(gridSize.value,10);
+  let x = clamp(p.x,boundsA.x0,boundsA.x1);
+  let y = clamp(p.y,boundsA.y0,boundsA.y1);
+  if(document.getElementById('snapGrid').checked){
+    x = Math.round(x/gs)*gs;
+    y = Math.round(y/gs)*gs;
+  }
+  el.setAttribute('cx', x);
+  el.setAttribute('cy', y);
+}
+
+function smoothPathFromPoints(pts){
+  if(pts.length<2) return "";
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for(let i=0; i<pts.length-1; i++){
+    const p0 = pts[i-1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i+1];
+    const p3 = pts[i+2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x)/6;
+    const cp1y = p1.y + (p2.y - p0.y)/6;
+    const cp2x = p2.x - (p3.x - p1.x)/6;
+    const cp2y = p2.y - (p3.y - p1.y)/6;
+    d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+function updatePath(){
+  const pts = [getP(pA), getP(pB), getP(pC)];
+  const d = smoothPathFromPoints(pts);
+  smoothPath.setAttribute('d', d);
+
+  // Sample preview
+  const steps = 240;
+  let sd="";
+  let pathLen=0;
+  try{ pathLen = smoothPath.getTotalLength(); }catch(e){ pathLen=0; }
+  statLen.textContent = pathLen? pathLen.toFixed(0) : "–";
+  for(let i=0;i<=steps;i++){
+    const pt = smoothPath.getPointAtLength(pathLen * (i/steps));
+    if(i===0) sd+=`M ${pt.x} ${pt.y}`; else sd+=` L ${pt.x} ${pt.y}`;
+  }
+  samplesPath.setAttribute('d', sd);
+  updateTravel();
+  saveAll();
+}
+
+// Mouse wheel for Z
+pathSVG.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  const delta = Math.sign(e.deltaY) * -20; // invert to feel natural
+  let v = parseInt(zSlider.value,10) + delta;
+  v = clamp(v,0,1000);
+  zSlider.value = v;
+  updateTravel();
+  saveAll();
+}, {passive:false});
+
+function segTimeMap(t){
+  // Map normalized t to piecewise segments according to keyframe times (A=0, B, C=1)
+  let a=0, b=parseFloat(tB.value), c=parseFloat(tC.value);
+  if(c<=0) c=1;
+  b = clamp(b, 0, c);
+  const ef = easeFns[easeSel.value] || easeFns.linear;
+  let te = ef(t);
+  if(document.getElementById('qTime').checked){
+    const qs = parseFloat(qStep.value);
+    te = Math.round(te/qs)*qs;
+  }
+  // normalized segments
+  const tb = b/c;
+  if(te <= tb){
+    const local = tb ? te/tb : 0;
+    return 0.5 * local; // first half of path approx
+  } else {
+    const local = (te - tb) / (1 - tb || 1);
+    return 0.5 + 0.5*local;
+  }
+}
+
+function posAt(t){
+  const pathLen = smoothPath.getTotalLength();
+  let te = constSpeed.checked ? segTimeMap(t) : t;
+  if(pathLen>0){
+    const pt = smoothPath.getPointAtLength(te * pathLen);
+    return {x:pt.x, y:pt.y};
+  }else{
+    const pts = [getP(pA), getP(pB), getP(pC)];
+    const ft = te*(pts.length-1);
+    const i0 = Math.floor(ft);
+    const i1 = Math.min(pts.length-1, i0+1);
+    const w = ft - i0;
+    return { x: lerp(pts[i0].x, pts[i1].x, w), y: lerp(pts[i0].y, pts[i1].y, w) };
+  }
+}
+
+function updateTravel(){
+  const tRaw = parseInt(tSlider.value,10)/1000;
+  const t = clamp(tRaw,0,1);
+  const p = posAt(t);
+  const z = parseInt(zSlider.value,10)/1000;
+
+  // Which tracks are audible?
+  const anySolo = tracks.some(tr=>tr.solo);
+  tracks.forEach((tr, idx)=>{
+    const phase = tr.phase || 0;
+    let tt = t + phase; tt = tt - Math.floor(tt);
+    const pp = posAt(tt);
+    const visible = !(anySolo && !tr.solo) && !tr.muted;
+    tr.el.setAttribute('visibility', visible ? 'visible':'hidden');
+    tr.el.setAttribute('cx', pp.x);
+    tr.el.setAttribute('cy', pp.y);
+  });
+
+  const nx = (p.x - boundsA.x0)/(boundsA.x1-boundsA.x0);
+  const ny = 1 - (p.y - boundsA.y0)/(boundsA.y1-boundsA.y0);
+  statT.textContent = t.toFixed(3);
+  statX.textContent = p.x.toFixed(1);
+  statY.textContent = p.y.toFixed(1);
+  statZ.textContent = z.toFixed(2);
+  statNX.textContent = nx.toFixed(3);
+  statNY.textContent = ny.toFixed(3);
+  statNZ.textContent = z.toFixed(3);
+
+  // JSON
+  const pts = [getP(pA), getP(pB), getP(pC)];
+  const preset = {
+    samplerate: 48000,
+    easing: easeSel.value,
+    const_speed: constSpeed.checked,
+    keyframe_time: { A: 0, B: parseFloat(tB.value), C: parseFloat(tC.value) },
+    tracks: tracks.map(tr=>({ id: tr.id, phase: +(tr.phase||0).toFixed(3), solo: !!tr.solo, mute: !!tr.muted })),
+    keyframes: pts.map((pt,i)=>({name:["A","B","C"][i],
+      x:+(((pt.x-boundsA.x0)/(boundsA.x1-boundsA.x0))*2-1).toFixed(3),
+      y:+(((1-(pt.y-boundsA.y0)/(boundsA.y1-boundsA.y0))*2-1)).toFixed(3)})),
+    cursor: { t:+t.toFixed(3), x:+nx.toFixed(3), y:+ny.toFixed(3), z:+z.toFixed(3) }
+  };
+  jsonPreviewA.textContent = JSON.stringify(preset,null,2);
+  saveAll();
+}
+
+function enableDrag(el){
+  let dragging=false, offX=0, offY=0;
+  el.addEventListener('pointerdown', e=>{
+    dragging=true; el.setPointerCapture(e.pointerId);
+    const cx = parseFloat(el.getAttribute('cx'));
+    const cy = parseFloat(el.getAttribute('cy'));
+    offX = e.clientX - cx; offY = e.clientY - cy;
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    setP(el, {x:e.clientX - offX, y:e.clientY - offY});
+    updatePath();
+  });
+  el.addEventListener('pointerup', e=>{ dragging=false; el.releasePointerCapture(e.pointerId); });
+}
+[pA,pB,pC].forEach(enableDrag);
+[tSlider,zSlider,constSpeed,easeSel,snapGrid,gridSize,qTime,qStep,tA,tB,tC].forEach(el=> el.addEventListener('input', updateTravel));
+document.getElementById('resetPath').onclick = ()=>{
+  setP(pA,{x:120,y:320}); setP(pB,{x:420,y:110}); setP(pC,{x:720,y:300});
+  tSlider.value=0; zSlider.value=600; easeSel.value='inOutQuad'; constSpeed.checked=true;
+  tA.value=0; tB.value=0.5; tC.value=1.0; snapGrid.checked=false; gridSize.value='20'; qTime.checked=false;
+  updatePath();
+};
+
+document.getElementById('copyJSON_A').onclick = ()=>{ navigator.clipboard.writeText(jsonPreviewA.textContent); };
+document.getElementById('downloadJSON_A').onclick = ()=>{
+  const blob = new Blob([jsonPreviewA.textContent], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mothership_path_ultra.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+
+// start with two tracks
+addTrack('#111'); addTrack('#0072b2');
+
+// ===== B) XY PAD + Mapping =====
+const xySVG = document.getElementById('xySVG');
+const xyDot = document.getElementById('xyDot');
+const xyGrid = document.getElementById('xyGrid');
+const xyX = document.getElementById('xyX');
+const xyY = document.getElementById('xyY');
+const wKino = document.getElementById('wKino');
+const wProbe = document.getElementById('wProbe');
+const wNeben = document.getElementById('wNeben');
+const wIntim = document.getElementById('wIntim');
+const jsonPreviewB = document.getElementById('jsonPreviewB');
+const ccX = document.getElementById('ccX');
+const ccY = document.getElementById('ccY');
+const ccMorph = document.getElementById('ccMorph');
+const xyB = {x0:20,y0:20,x1:400,y1:220};
+
+for(let x=xyB.x0; x<=xyB.x1; x+=38){
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',x); l.setAttribute('y1',xyB.y0);
+  l.setAttribute('x2',x); l.setAttribute('y2',xyB.y1);
+  l.setAttribute('class','grid'); xyGrid.appendChild(l);
+}
+for(let y=xyB.y0; y<=xyB.y1; y+=40){
+  const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',xyB.x0); l.setAttribute('y1',y);
+  l.setAttribute('x2',xyB.x1); l.setAttribute('y2',y);
+  l.setAttribute('class','grid'); xyGrid.appendChild(l);
+}
+
+function setXY(x,y){ xyDot.setAttribute('cx', clamp(x,xyB.x0,xyB.x1)); xyDot.setAttribute('cy', clamp(y,xyB.y0,xyB.y1)); }
+function getXY(){ return {x: parseFloat(xyDot.getAttribute('cx')), y: parseFloat(xyDot.getAttribute('cy'))}; }
+function updateXY(){
+  const p = getXY();
+  const nx = (p.x - xyB.x0)/(xyB.x1-xyB.x0);
+  const ny = 1 - (p.y - xyB.y0)/(xyB.y1-xyB.y0);
+  xyX.textContent = nx.toFixed(2);
+  xyY.textContent = ny.toFixed(2);
+  const kino = nx*ny, probe=(1-nx)*ny, neben=(1-nx)*(1-ny), intim=nx*(1-ny);
+  const sum = kino+probe+neben+intim||1;
+  const wk=kino/sum, wp=probe/sum, wn=neben/sum, wi=intim/sum;
+  wKino.textContent = wk.toFixed(2);
+  wProbe.textContent = wp.toFixed(2);
+  wNeben.textContent = wn.toFixed(2);
+  wIntim.textContent = wi.toFixed(2);
+  const obj = {mixer4:{kino:wk, proberaum:wp, nebenraum:wn, intim:wi}, xy:{x:nx,y:ny} };
+  obj.mapping = { osc:{ x:'/mixer4/x', y:'/mixer4/y', kino:'/mixer4/kino', proberaum:'/mixer4/probe', nebenraum:'/mixer4/neben', intim:'/mixer4/intim' },
+                  midi:{ channel:1, cc:{ x:parseInt(ccX.value,10), y:parseInt(ccY.value,10), morph:parseInt(ccMorph.value,10) } } };
+  jsonPreviewB.textContent = JSON.stringify(obj,null,2);
+  saveAll();
+}
+
+(function enableXY(){
+  let drag=false, offX=0, offY=0;
+  xyDot.addEventListener('pointerdown', e=>{ drag=true; xyDot.setPointerCapture(e.pointerId);
+    offX = e.clientX - parseFloat(xyDot.getAttribute('cx'));
+    offY = e.clientY - parseFloat(xyDot.getAttribute('cy'));
+  });
+  xyDot.addEventListener('pointermove', e=>{ if(!drag) return; setXY(e.clientX-offX, e.clientY-offY); updateXY(); });
+  xyDot.addEventListener('pointerup', e=>{ drag=false; xyDot.releasePointerCapture(e.pointerId); });
+})();
+document.getElementById('resetXY').onclick = ()=>{ setXY(210,120); updateXY(); };
+document.getElementById('copyJSON_B').onclick = ()=>{ navigator.clipboard.writeText(jsonPreviewB.textContent); };
+document.getElementById('downloadJSON_B').onclick = ()=>{
+  const blob = new Blob([jsonPreviewB.textContent], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mothership_layer4_map_ultra.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById('copyMap').onclick = ()=>{
+  const obj = JSON.parse(jsonPreviewB.textContent||'{}'); navigator.clipboard.writeText(JSON.stringify(obj.mapping||{},null,2));
+};
+
+const mappingState = {
+  collect(){ return { ccX:parseInt(ccX.value,10), ccY:parseInt(ccY.value,10), ccMorph:parseInt(ccMorph.value,10) }; },
+  apply(s){ if(s.ccX) ccX.value=s.ccX; if(s.ccY) ccY.value=s.ccY; if(s.ccMorph) ccMorph.value=s.ccMorph; updateXY(); }
+};
+
+// ===== C) Triangle & Morphing =====
+const triSVG = document.getElementById('triSVG');
+const triDot = document.getElementById('triDot');
+const tKino = document.getElementById('tKino');
+const tProbe = document.getElementById('tProbe');
+const tNeben = document.getElementById('tNeben');
+const jsonPreviewC = document.getElementById('jsonPreviewC');
+const presetABtn = document.getElementById('presetA');
+const presetBBtn = document.getElementById('presetB');
+const morph = document.getElementById('morph');
+const Atri={x:220,y:50}, Btri={x:70,y:340}, Ctri={x:370,y:340};
+let presetAState=null, presetBState=null;
+
+function setTri(x,y){ triDot.setAttribute('cx', x); triDot.setAttribute('cy', y); }
+function getTri(){ return {x: parseFloat(triDot.getAttribute('cx')), y: parseFloat(triDot.getAttribute('cy'))}; }
+function bary(p){
+  const v0={x:Ctri.x-Atri.x, y:Ctri.y-Atri.y};
+  const v1={x:Btri.x-Atri.x, y:Btri.y-Atri.y};
+  const v2={x:p.x-Atri.x, y:p.y-Atri.y};
+  const d00=v0.x*v0.x+v0.y*v0.y;
+  const d01=v0.x*v1.x+v0.y*v1.y;
+  const d11=v1.x*v1.x+v1.y*v1.y;
+  const d20=v2.x*v0.x+v2.y*v0.y;
+  const d21=v2.x*v1.x+v2.y*v1.y;
+  const denom=d00*d11-d01*d01;
+  let v=(d11*d20-d01*d21)/denom;
+  let w=(d00*d21-d01*d20)/denom;
+  let u=1-v-w; return {u,v,w};
+}
+function updateTri(){
+  const p=getTri();
+  const bc=bary(p);
+  const kino=clamp(bc.u,0,1), neben=clamp(bc.v,0,1), probe=clamp(bc.w,0,1);
+  const sum=kino+neben+probe||1;
+  const nk=kino/sum, nn=neben/sum, np=probe/sum;
+  tKino.textContent=nk.toFixed(2); tNeben.textContent=nn.toFixed(2); tProbe.textContent=np.toFixed(2);
+  const obj={mixer3:{kino:nk, proberaum:np, nebenraum:nn}, uvw:bc};
+  jsonPreviewC.textContent = JSON.stringify(obj,null,2);
+  saveAll();
+}
+(function enableTri(){
+  let drag=false, offX=0, offY=0;
+  triDot.addEventListener('pointerdown', e=>{ drag=true; triDot.setPointerCapture(e.pointerId);
+    offX=e.clientX-parseFloat(triDot.getAttribute('cx')); offY=e.clientY-parseFloat(triDot.getAttribute('cy')); });
+  triDot.addEventListener('pointermove', e=>{ if(!drag) return; setTri(e.clientX-offX, e.clientY-offY); updateTri(); });
+  triDot.addEventListener('pointerup', e=>{ drag=false; triDot.releasePointerCapture(e.pointerId); });
+})();
+document.getElementById('resetTri').onclick = ()=>{ setTri(220,210); updateTri(); };
+document.getElementById('copyJSON_C').onclick = ()=>{ navigator.clipboard.writeText(jsonPreviewC.textContent); };
+document.getElementById('downloadJSON_C').onclick = ()=>{
+  const blob = new Blob([jsonPreviewC.textContent], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mothership_layer3_ultra.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+presetABtn.onclick = ()=>{ presetAState = collectAll(); alert('Preset A gespeichert.'); };
+presetBBtn.onclick = ()=>{ presetBState = collectAll(); alert('Preset B gespeichert.'); };
+morph.addEventListener('input', ()=>{
+  if(!presetAState || !presetBState) return;
+  const t = parseInt(morph.value,10)/1000;
+  // Morph path handles
+  function mix(a,b){ return a + (b-a)*t; }
+  function mixP(pa,pb){ return {x: mix(pa.x, pb.x), y: mix(pa.y, pb.y)}; }
+  // Apply to path
+  const aA=presetAState.A.A, aB=presetAState.A.B, aC=presetAState.A.C;
+  const bA=presetBState.A.A, bB=presetBState.A.B, bC=presetBState.A.C;
+  setP(pA, mixP(aA,bA)); setP(pB, mixP(aB,bB)); setP(pC, mixP(aC,bC));
+  // XY pad
+  if(presetAState.B && presetBState.B){
+    const da=presetAState.B.dot, db=presetBState.B.dot;
+    if(da && db){ xyDot.setAttribute('cx', mix(da.x,db.x)); xyDot.setAttribute('cy', mix(da.y,db.y)); }
+  }
+  // Triangle
+  if(presetAState.C && presetBState.C){
+    const da=presetAState.C.dot, db=presetBState.C.dot;
+    if(da && db){ setTri( mix(da.x,db.x), mix(da.y,db.y) ); }
+  }
+  updatePath(); updateXY(); updateTri();
+});
+
+// State handlers
+const pathState = {
+  collect(){
+    return {
+      A:getP(pA), B:getP(pB), C:getP(pC),
+      t: parseInt(tSlider.value,10), z: parseInt(zSlider.value,10),
+      constSpeed: constSpeed.checked, easing: easeSel.value,
+      grid: { snap:snapGrid.checked, size: parseInt(gridSize.value,10) },
+      keyTimes: {A:+tA.value, B:+tB.value, C:+tC.value},
+      tracks: tracks.map(tr=>({id:tr.id, phase:tr.phase, solo:tr.solo, muted:tr.muted}))
+    };
+  },
+  apply(s){
+    if(s.A) setP(pA,s.A); if(s.B) setP(pB,s.B); if(s.C) setP(pC,s.C);
+    if(s.t!=null) tSlider.value=s.t; if(s.z!=null) zSlider.value=s.z;
+    if(s.constSpeed!=null) constSpeed.checked=s.constSpeed;
+    if(s.easing) easeSel.value=s.easing;
+    if(s.grid){ snapGrid.checked=!!s.grid.snap; if(s.grid.size){ gridSize.value=s.grid.size; drawGrid(); } }
+    if(s.keyTimes){ tA.value=s.keyTimes.A||0; tB.value=s.keyTimes.B||0.5; tC.value=s.keyTimes.C||1; }
+    // rebuild tracks
+    tracks = []; travelDots.innerHTML=''; tracksList.innerHTML='';
+    const palette = ['#111','#0072b2','#d55e00','#009e73'];
+    const arr = s.tracks || [{},{phase:0.2}];
+    arr.slice(0,4).forEach((tr,i)=>{
+      addTrack(palette[i]); tracks[i].phase = tr.phase||0; tracks[i].solo=!!tr.solo; tracks[i].muted=!!tr.muted;
+      // update UI inputs
+      const row = tracksList.children[i];
+      row.querySelector('.phase').value = Math.round(tracks[i].phase*1000);
+      row.querySelector('.solo').checked = tracks[i].solo;
+      row.querySelector('.mute').checked = tracks[i].muted;
+    });
+    updatePath();
+  }
+};
+
+const xyState = { collect(){ return { dot: getXY() }; }, apply(s){ if(s.dot) setXY(s.dot.x,s.dot.y); updateXY(); } };
+const triState = { collect(){ return { dot: getTri() }; }, apply(s){ if(s.dot) setTri(s.dot.x,s.dot.y); updateTri(); } };
+
+// init
+(function init(){
+  const h=location.hash.replace(/^#/,'');
+  const st=deb64(h);
+  if(st){ applyAll(st); } else {
+    const ls=loadLS(AUTO_KEY,null);
+    if(ls) applyAll(ls); else { updatePath(); updateXY(); updateTri(); }
+  }
+})();
+
+// Persist toggle
+document.getElementById('autosave').addEventListener('change', saveAll);
+window.addEventListener('beforeunload', saveAll);
+</script>
+
+</body>
+</html>

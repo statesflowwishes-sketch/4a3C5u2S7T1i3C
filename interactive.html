@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOTHERSHIP • Interaktive Diagramme (Pfad & Layer)</title>
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .app { padding: 8mm; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin: 4mm 0 6mm 0; }
+  .toolbar .btn {
+    border:1px solid #ddd; border-radius: 6px; padding: 6px 10px; background:#f8f8f8; cursor:pointer; font-size: 11pt;
+  }
+  .toolbar .btn:hover { background:#f1f1f1; }
+  .panel { border:1px solid #eee; border-radius: 8px; padding: 6mm; margin-bottom: 10mm; background: #fff; }
+  .panel h3 { margin-top:0; }
+  .row { display:flex; flex-wrap:wrap; gap: 10mm; }
+  .col { flex:1 1 340px; }
+  svg { user-select:none; -webkit-user-select:none; touch-action: none; background: #fff; border:1px solid #eee; border-radius: 6px; }
+  .handle { fill:#ffffff; stroke:#333; stroke-width:1.2; cursor:grab; }
+  .handle:active { cursor:grabbing; }
+  .path-main { stroke:#333; stroke-width:1.6; fill:none; }
+  .path-samples { stroke:#bbb; stroke-width:1; fill:none; stroke-dasharray:4 3; }
+  .tick { stroke:#ddd; stroke-width:1; }
+  .grid { stroke:#f0f0f0; stroke-width:1; }
+  .dot { fill:#111; }
+  .label { font-size:10px; fill:#555; }
+  .xy-pad { background: linear-gradient(0deg, rgba(0,0,0,0.02), rgba(0,0,0,0.02)); }
+  .legend { font-size: 10pt; color:#555; }
+  .kvgrid { display:grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: 11pt; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:10pt; }
+  .note { font-size:10pt; color:#666; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <h1>MOTHERSHIP • Interaktive Diagramme</h1>
+      <h2>Pfad‑Automation & Layer‑Mischung (SVG)</h2>
+    </div>
+
+    <div class="panel">
+      <h3 class="section-title">A) Pfad‑Automation (A→B→C) mit Keyframes</h3>
+      <p>Ziehe die Punkte A, B, C im Raum. Der Slider animiert ein Objekt entlang des Pfades. Werte rechts zeigen abgeleitete Parameter (Breite/Höhe/Tiefe) und erzeugen eine Preset‑JSON.</p>
+      <div class="row">
+        <div class="col">
+          <svg id="pathSVG" viewBox="0 0 800 400" width="100%" height="350">
+            <!-- Grid -->
+            <g id="grid"></g>
+            <!-- Smoothed path and sampled preview -->
+            <path id="smoothPath" class="path-main" d=""/>
+            <path id="samplesPath" class="path-samples" d=""/>
+            <!-- Travel dot -->
+            <circle id="travelDot" class="dot" cx="0" cy="0" r="5"></circle>
+            <!-- Points A/B/C -->
+            <g id="points">
+              <circle id="pA" class="handle" cx="120" cy="300" r="8"></circle>
+              <text x="120" y="320" class="label">A</text>
+              <circle id="pB" class="handle" cx="400" cy="120" r="8"></circle>
+              <text x="400" y="140" class="label">B</text>
+              <circle id="pC" class="handle" cx="680" cy="280" r="8"></circle>
+              <text x="680" y="300" class="label">C</text>
+            </g>
+            <!-- Axes -->
+            <line x1="40" y1="360" x2="760" y2="360" class="tick"></line>
+            <line x1="40" y1="40"  x2="40"  y2="360" class="tick"></line>
+            <text x="765" y="375" class="label">X (Breite)</text>
+            <text x="10" y="50" class="label" transform="rotate(-90 10,50)">Y (Höhe)</text>
+          </svg>
+          <div class="toolbar">
+            <input id="tSlider" type="range" min="0" max="1000" value="0" style="width:280px">
+            <button class="btn" id="resetPath">Reset</button>
+            <button class="btn" id="copyJSON_A">Copy JSON</button>
+            <button class="btn" id="downloadJSON_A">Download JSON</button>
+          </div>
+        </div>
+        <div class="col">
+          <div class="kvgrid">
+            <div>Pfadlänge</div><div><span id="statLen">–</span> px</div>
+            <div>t</div><div><span id="statT">0.000</span></div>
+            <div>Pos</div><div>(<span id="statX">–</span>, <span id="statY">–</span>)</div>
+            <div>Breite X</div><div><span id="statNX">–</span></div>
+            <div>Höhe Y</div><div><span id="statNY">–</span></div>
+            <div>Tiefe Z (heur.)</div><div><span id="statNZ">–</span></div>
+          </div>
+          <div class="callout small" style="margin-top:6mm">
+            <b>Hinweis:</b> Z ist hier eine heuristische Ableitung aus X/Y (für Demo).
+            In der echten Engine würdest du Objekt‑Entfernung/Room‑Sends gezielt mappen.
+          </div>
+          <div class="code mono" id="jsonPreviewA" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="section-title">B) Layer‑Mischung (XY‑Pad, 4‑Ecken‑Crossfader)</h3>
+      <p>Verschiebe den Punkt im XY‑Pad. Die vier Layer‑Gewichte ergeben sich bilinear und ergeben 100 % in Summe.</p>
+      <div class="row">
+        <div class="col">
+          <svg id="xySVG" class="xy-pad" viewBox="0 0 400 260" width="100%" height="260">
+            <rect x="10" y="10" width="380" height="200" fill="#fff" stroke="#eee" rx="6"></rect>
+            <g id="xyGrid"></g>
+            <circle id="xyDot" class="handle" cx="200" cy="110" r="8"></circle>
+            <text x="20" y="28" class="label">Proberaum</text>
+            <text x="330" y="28" class="label">Kino</text>
+            <text x="20" y="208" class="label">Nebenraum</text>
+            <text x="320" y="208" class="label">Intim/Dämpf</text>
+          </svg>
+          <div class="toolbar">
+            <button class="btn" id="resetXY">Reset</button>
+            <button class="btn" id="copyJSON_B">Copy JSON</button>
+            <button class="btn" id="downloadJSON_B">Download JSON</button>
+          </div>
+        </div>
+        <div class="col">
+          <div class="kvgrid">
+            <div>X/Y</div><div>(<span id="xyX">0.50</span>, <span id="xyY">0.50</span>)</div>
+            <div>Kino</div><div><span id="wKino">0.25</span></div>
+            <div>Proberaum</div><div><span id="wProbe">0.25</span></div>
+            <div>Nebenraum</div><div><span id="wNeben">0.25</span></div>
+            <div>Intim/Dämpf</div><div><span id="wIntim">0.25</span></div>
+          </div>
+          <div class="code mono" id="jsonPreviewB" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="section-title">C) Dreiecksmischer (Baryzentrische 3‑Layer‑Mischung)</h3>
+      <p>Ein dritter Modus mit drei Eck‑Räumen. Der Punkt im Dreieck mischt die Anteile über baryzentrische Koordinaten.</p>
+      <div class="row">
+        <div class="col">
+          <svg id="triSVG" viewBox="0 0 420 380" width="100%" height="360">
+            <polygon id="tri" points="210,40 60,320 360,320" fill="#fff" stroke="#eee"></polygon>
+            <g id="triGrid"></g>
+            <circle id="triDot" class="handle" cx="210" cy="200" r="8"></circle>
+            <text x="210" y="28" class="label" text-anchor="middle">Kino</text>
+            <text x="48" y="332" class="label" text-anchor="start">Proberaum</text>
+            <text x="372" y="332" class="label" text-anchor="end">Nebenraum</text>
+          </svg>
+          <div class="toolbar">
+            <button class="btn" id="resetTri">Reset</button>
+            <button class="btn" id="copyJSON_C">Copy JSON</button>
+            <button class="btn" id="downloadJSON_C">Download JSON</button>
+          </div>
+        </div>
+        <div class="col">
+          <div class="kvgrid">
+            <div>Kino</div><div><span id="tKino">0.33</span></div>
+            <div>Proberaum</div><div><span id="tProbe">0.33</span></div>
+            <div>Nebenraum</div><div><span id="tNeben">0.33</span></div>
+          </div>
+          <div class="code mono" id="jsonPreviewC" style="margin-top:6mm; max-height:220px; overflow:auto;"></div>
+          <p class="note">Tipp: Nutze XY‑Pad für 4‑Ecken‑Crossfades; das Dreieck eignet sich für „drei Archetypen“.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>© 2025 – Interaktive Demo • Keine Audioausgabe, nur Steuerdaten.</div>
+      <div class="small"><a href="index.html">Zurück zum 33‑Seiten‑Blueprint</a></div>
+    </div>
+  </div>
+
+<script>
+// Utility helpers
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a,b,t) => a + (b-a)*t;
+
+// ----- A) PATH AUTOMATION -----
+(function(){
+  const svg = document.getElementById('pathSVG');
+  const pA = document.getElementById('pA');
+  const pB = document.getElementById('pB');
+  const pC = document.getElementById('pC');
+  const smoothPath = document.getElementById('smoothPath');
+  const samplesPath = document.getElementById('samplesPath');
+  const travelDot = document.getElementById('travelDot');
+  const tSlider = document.getElementById('tSlider');
+  const statLen = document.getElementById('statLen');
+  const statT = document.getElementById('statT');
+  const statX = document.getElementById('statX');
+  const statY = document.getElementById('statY');
+  const statNX = document.getElementById('statNX');
+  const statNY = document.getElementById('statNY');
+  const statNZ = document.getElementById('statNZ');
+  const jsonPreview = document.getElementById('jsonPreviewA');
+
+  const bounds = {x0:40,y0:40,x1:760,y1:360};
+
+  // Grid
+  const grid = document.getElementById('grid');
+  for(let x = bounds.x0; x<=bounds.x1; x+=60){
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1', x); l.setAttribute('y1', bounds.y0);
+    l.setAttribute('x2', x); l.setAttribute('y2', bounds.y1);
+    l.setAttribute('class','grid');
+    grid.appendChild(l);
+  }
+  for(let y = bounds.y0; y<=bounds.y1; y+=60){
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1', bounds.x0); l.setAttribute('y1', y);
+    l.setAttribute('x2', bounds.x1); l.setAttribute('y2', y);
+    l.setAttribute('class','grid');
+    grid.appendChild(l);
+  }
+
+  function getP(el){
+    return {x: parseFloat(el.getAttribute('cx')), y: parseFloat(el.getAttribute('cy'))};
+  }
+  function setP(el,p){
+    el.setAttribute('cx', clamp(p.x,bounds.x0,bounds.x1));
+    el.setAttribute('cy', clamp(p.y,bounds.y0,bounds.y1));
+  }
+
+  function smoothPathFromPoints(pts){
+    // Simple Catmull-Rom to Bezier approximation
+    if(pts.length<2) return "";
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for(let i=0; i<pts.length-1; i++){
+      const p0 = pts[i-1] || pts[i];
+      const p1 = pts[i];
+      const p2 = pts[i+1];
+      const p3 = pts[i+2] || p2;
+      const cp1x = p1.x + (p2.x - p0.x)/6;
+      const cp1y = p1.y + (p2.y - p0.y)/6;
+      const cp2x = p2.x - (p3.x - p1.x)/6;
+      const cp2y = p2.y - (p3.y - p1.y)/6;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+    return d;
+  }
+
+  function samplePath(pts, steps=300){
+    // Sample by interpolating between points linearly along indices, not arc-length perfect (ok for demo)
+    const samples = [];
+    for(let i=0; i<steps; i++){
+      const t = i/(steps-1);
+      const ft = t*(pts.length-1);
+      const i0 = Math.floor(ft);
+      const i1 = Math.min(pts.length-1, i0+1);
+      const w = ft - i0;
+      const x = lerp(pts[i0].x, pts[i1].x, w);
+      const y = lerp(pts[i0].y, pts[i1].y, w);
+      samples.push({x,y});
+    }
+    // Build samples path
+    let d = `M ${samples[0].x} ${samples[0].y}`;
+    for(let i=1;i<samples.length;i++){ d += ` L ${samples[i].x} ${samples[i].y}`; }
+    return {samples, d};
+  }
+
+  function update(){
+    const pts = [getP(pA), getP(pB), getP(pC)];
+    const d = smoothPathFromPoints(pts);
+    smoothPath.setAttribute('d', d);
+    const {samples, d:sd} = samplePath(pts, 400);
+    samplesPath.setAttribute('d', sd);
+    statLen.textContent = (samples.length).toFixed(0);
+    // Position by slider
+    const idx = Math.round(parseInt(tSlider.value,10)/1000 * (samples.length-1));
+    const pos = samples[idx];
+    travelDot.setAttribute('cx', pos.x);
+    travelDot.setAttribute('cy', pos.y);
+    statT.textContent = (idx/(samples.length-1)).toFixed(3);
+    statX.textContent = pos.x.toFixed(1);
+    statY.textContent = pos.y.toFixed(1);
+    const nx = (pos.x - bounds.x0)/(bounds.x1-bounds.x0); // 0..1
+    const ny = 1 - (pos.y - bounds.y0)/(bounds.y1-bounds.y0); // 0..1 (oben=1)
+    const nz = clamp( (0.6*ny + 0.4*(1-Math.abs(nx-0.5)*2)), 0, 1 );
+    statNX.textContent = nx.toFixed(3);
+    statNY.textContent = ny.toFixed(3);
+    statNZ.textContent = nz.toFixed(3);
+
+    const preset = {
+      samplerate: 48000,
+      scene: {
+        keyframes: [
+          {name:"A", x: ((pts[0].x-bounds.x0)/(bounds.x1-bounds.x0)*2-1).toFixed(3),
+                 y: ((1-(pts[0].y-bounds.y0)/(bounds.y1-bounds.y0))*2-1).toFixed(3)},
+          {name:"B", x: ((pts[1].x-bounds.x0)/(bounds.x1-bounds.x0)*2-1).toFixed(3),
+                 y: ((1-(pts[1].y-bounds.y0)/(bounds.y1-bounds.y0))*2-1).toFixed(3)},
+          {name:"C", x: ((pts[2].x-bounds.x0)/(bounds.x1-bounds.x0)*2-1).toFixed(3),
+                 y: ((1-(pts[2].y-bounds.y0)/(bounds.y1-bounds.y0))*2-1).toFixed(3)}
+        ],
+        cursor: {t: (idx/(samples.length-1)).toFixed(3), nx: nx.toFixed(3), ny: ny.toFixed(3), nz: nz.toFixed(3)}
+      }
+    };
+    jsonPreview.textContent = JSON.stringify(preset, null, 2);
+  }
+
+  function enableDrag(el){
+    let dragging=false, offX=0, offY=0;
+    el.addEventListener('pointerdown', e=>{
+      dragging=true;
+      el.setPointerCapture(e.pointerId);
+      const cx = parseFloat(el.getAttribute('cx'));
+      const cy = parseFloat(el.getAttribute('cy'));
+      offX = e.clientX - cx; offY = e.clientY - cy;
+    });
+    el.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      setP(el, {x:e.clientX - offX, y:e.clientY - offY});
+      update();
+    });
+    el.addEventListener('pointerup', e=>{ dragging=false; el.releasePointerCapture(e.pointerId); });
+  }
+  [pA,pB,pC].forEach(enableDrag);
+  tSlider.addEventListener('input', update);
+  document.getElementById('resetPath').onclick = ()=>{
+    setP(pA,{x:120,y:300}); setP(pB,{x:400,y:120}); setP(pC,{x:680,y:280}); tSlider.value=0; update();
+  };
+  document.getElementById('copyJSON_A').onclick = ()=>{
+    navigator.clipboard.writeText(jsonPreview.textContent);
+  };
+  document.getElementById('downloadJSON_A').onclick = ()=>{
+    const blob = new Blob([jsonPreview.textContent], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mothership_path_preset.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  update();
+})();
+
+// ----- B) XY PAD (4-way mix) -----
+(function(){
+  const svg = document.getElementById('xySVG');
+  const dot = document.getElementById('xyDot');
+  const grid = document.getElementById('xyGrid');
+  const xOut = document.getElementById('xyX');
+  const yOut = document.getElementById('xyY');
+  const wK = document.getElementById('wKino');
+  const wP = document.getElementById('wProbe');
+  const wN = document.getElementById('wNeben');
+  const wI = document.getElementById('wIntim');
+  const jsonPreview = document.getElementById('jsonPreviewB');
+
+  const minX=10,maxX=390,minY=10,maxY=210;
+  // grid
+  for(let x=minX; x<=maxX; x+=38){
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',x); l.setAttribute('y1',minY);
+    l.setAttribute('x2',x); l.setAttribute('y2',maxY);
+    l.setAttribute('class','grid');
+    grid.appendChild(l);
+  }
+  for(let y=minY; y<=maxY; y+=40){
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',minX); l.setAttribute('y1',y);
+    l.setAttribute('x2',maxX); l.setAttribute('y2',y);
+    l.setAttribute('class','grid');
+    grid.appendChild(l);
+  }
+
+  function setDot(x,y){
+    dot.setAttribute('cx', clamp(x,minX,maxX));
+    dot.setAttribute('cy', clamp(y,minY,maxY));
+  }
+  function getDot(){
+    return {x: parseFloat(dot.getAttribute('cx')), y: parseFloat(dot.getAttribute('cy'))};
+  }
+  function update(){
+    const p = getDot();
+    const nx = (p.x - minX)/(maxX-minX); // 0..1
+    const ny = 1 - (p.y - minY)/(maxY-minY); // 0..1
+    xOut.textContent = nx.toFixed(2);
+    yOut.textContent = ny.toFixed(2);
+    // bilinear weights
+    const kino = nx * ny;
+    const probe = (1-nx) * ny;
+    const neben = (1-nx) * (1-ny);
+    const intim = nx * (1-ny);
+    const sum = kino+probe+neben+intim || 1;
+    const wk=kino/sum, wp=probe/sum, wn=neben/sum, wi=intim/sum;
+    wK.textContent = wk.toFixed(2);
+    wP.textContent = wp.toFixed(2);
+    wN.textContent = wn.toFixed(2);
+    wI.textContent = wi.toFixed(2);
+    const obj = {mixer4:{kino:wk, proberaum:wp, nebenraum:wn, intim:wi}};
+    jsonPreview.textContent = JSON.stringify(obj, null, 2);
+  }
+  function enableDrag(el){
+    let drag=false, offX=0, offY=0;
+    el.addEventListener('pointerdown', e=>{
+      drag=true; el.setPointerCapture(e.pointerId);
+      offX = e.clientX - parseFloat(el.getAttribute('cx'));
+      offY = e.clientY - parseFloat(el.getAttribute('cy'));
+    });
+    el.addEventListener('pointermove', e=>{
+      if(!drag) return;
+      setDot(e.clientX - offX, e.clientY - offY); update();
+    });
+    el.addEventListener('pointerup', e=>{ drag=false; el.releasePointerCapture(e.pointerId); });
+  }
+  enableDrag(dot);
+
+  document.getElementById('resetXY').onclick = ()=>{ setDot(200,110); update(); };
+  document.getElementById('copyJSON_B').onclick = ()=>{ navigator.clipboard.writeText(jsonPreview.textContent); };
+  document.getElementById('downloadJSON_B').onclick = ()=>{
+    const blob = new Blob([jsonPreview.textContent], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'mothership_layer4_mix.json'; a.click(); URL.revokeObjectURL(a.href);
+  };
+  update();
+})();
+
+// ----- C) TRIANGLE MIXER (3-way) -----
+(function(){
+  const svg = document.getElementById('triSVG');
+  const tri = document.getElementById('tri');
+  const dot = document.getElementById('triDot');
+  const tK=document.getElementById('tKino');
+  const tP=document.getElementById('tProbe');
+  const tN=document.getElementById('tNeben');
+  const jsonPreview=document.getElementById('jsonPreviewC');
+
+  const A={x:210,y:40}, B={x:60,y:320}, C={x:360,y:320};
+
+  function setDot(x,y){
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+  }
+  function getDot(){ return {x: parseFloat(dot.getAttribute('cx')), y: parseFloat(dot.getAttribute('cy'))}; }
+
+  function barycentric(p){
+    // Compute barycentric coordinates for point p in triangle ABC
+    const v0={x:C.x-A.x, y:C.y-A.y};
+    const v1={x:B.x-A.x, y:B.y-A.y};
+    const v2={x:p.x-A.x, y:p.y-A.y};
+    const d00 = v0.x*v0.x + v0.y*v0.y;
+    const d01 = v0.x*v1.x + v0.y*v1.y;
+    const d11 = v1.x*v1.x + v1.y*v1.y;
+    const d20 = v2.x*v0.x + v2.y*v0.y;
+    const d21 = v2.x*v1.x + v2.y*v1.y;
+    const denom = d00*d11 - d01*d01;
+    let v = (d11*d20 - d01*d21)/denom;
+    let w = (d00*d21 - d01*d20)/denom;
+    let u = 1 - v - w;
+    return {u,v,w}; // u at A (Kino), v at C (Nebenraum), w at B (Proberaum)
+  }
+
+  function update(){
+    const p=getDot();
+    const bc=barycentric(p);
+    const kino = clamp(bc.u,0,1);
+    const neben = clamp(bc.v,0,1);
+    const probe = clamp(bc.w,0,1);
+    const sum = kino+neben+probe || 1;
+    const nk=kino/sum, nn=neben/sum, np=probe/sum;
+    tK.textContent = nk.toFixed(2);
+    tNeben.textContent = nn.toFixed(2);
+    tProbe.textContent = np.toFixed(2);
+    const obj={mixer3:{kino:nk, proberaum:np, nebenraum:nn}};
+    jsonPreview.textContent = JSON.stringify(obj, null, 2);
+  }
+
+  function enableDrag(el){
+    let drag=false, offX=0, offY=0;
+    el.addEventListener('pointerdown', e=>{
+      drag=true; el.setPointerCapture(e.pointerId);
+      offX = e.clientX - parseFloat(el.getAttribute('cx'));
+      offY = e.clientY - parseFloat(el.getAttribute('cy'));
+    });
+    el.addEventListener('pointermove', e=>{
+      if(!drag) return;
+      setDot(e.clientX - offX, e.clientY - offY);
+      update();
+    });
+    el.addEventListener('pointerup', e=>{ drag=false; el.releasePointerCapture(e.pointerId); });
+  }
+  enableDrag(dot);
+  document.getElementById('resetTri').onclick = ()=>{ setDot(210,200); update(); };
+  document.getElementById('copyJSON_C').onclick = ()=>{ navigator.clipboard.writeText(jsonPreview.textContent); };
+  document.getElementById('downloadJSON_C').onclick = ()=>{
+    const blob = new Blob([jsonPreview.textContent], {type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='mothership_layer3_mix.json'; a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  update();
+})();
+</script>
+</body>
+</html>
