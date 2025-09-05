@@ -1040,6 +1040,21 @@ git add README.md TRADEMARKS.md LICENSE
 git commit -m "Clarify: Präsent/Konzeptstudie, add TRADEMARKS + MIT license"
 git push
 
+# 1) Trademark-Hinweis + MIT-Lizenz minimal anlegen
+printf "All product names/logos belong to their owners; reference ≠ endorsement.\n" > TRADEMARKS.md
+cat > LICENSE <<'EOF'
+MIT License
+Copyright (c) 2025
+Permission is hereby granted, free of charge, to any person obtaining a copy...
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND...
+EOF
+
+# 2) README auf Geschenk-Wording drehen (ersetzt die Kooperation-Zeile)
+perl -0777 -pe 's/Entwickelt in Kooperation mit Sennheiser & Pioneer DJ.*?\n/**Präsent \/ Konzeptstudie** für Pioneer DJ & Sennheiser\n_Unabhängige Demo – keine offizielle Zusammenarbeit oder Endorsement._\n*Marken und Logos gehören den jeweiligen Inhabern.*\n\n> **Ethik & Recht:** Nicht-kommerzielles Geschenk\/Showcase. Keine vertraulichen Daten, kein Sponsoring, keine Partnerschaft. Nutzung zu Demo-\/Forschungszwecken.\n\n/g' -i README.md
+
+git add README.md TRADEMARKS.md LICENSE
+git commit -m "Clarify: Präsent/Konzeptstudie; add TRADEMARKS + MIT"
+git push
 
 **Last Updated**: September 5, 2025  
 **Version**: 1.0.0  
